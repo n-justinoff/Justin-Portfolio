@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Project, UserProfile, CATEGORIES } from '../types';
-import { X, Save, Trash2, Plus, Edit2, ChevronDown, ChevronUp, Upload } from 'lucide-react';
+import { X, Save, Trash2, Plus, Edit2, ChevronDown, ChevronUp, Upload, Code } from 'lucide-react';
 
 interface AdminPanelProps {
   isOpen: boolean;
@@ -61,12 +61,48 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, profile, proje
     try {
         onUpdateProfile(editingProfile);
         onUpdateProjects(editingProjects);
-        alert('Changes Saved Successfully!');
+        alert('Changes Saved to Local Browser Storage! \n\nTo make these live for everyone, use the "Export Code" button and update your constants.ts file.');
         onClose();
     } catch (e) {
         alert('Error saving changes. If you uploaded a large image, it might exceed local storage limits.');
         console.error(e);
     }
+  };
+
+  const exportConfig = () => {
+    const configContent = `import { Project, UserProfile } from './types';
+
+export const INITIAL_PROFILE: UserProfile = ${JSON.stringify(editingProfile, null, 2)};
+
+const SAMPLE_GALLERY = [
+  "https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=1974&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1964&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=2070&auto=format&fit=crop"
+];
+
+const LOREM_IPSUM = \`
+  <h3 class="text-2xl font-bold mb-4 text-white">The Challenge</h3>
+  <p class="mb-6 text-gray-300 leading-relaxed">
+    Users often struggle to find specific content within vast libraries of streaming content. The traditional keyword search is often insufficient for vague queries or describing visual moments. Our goal was to integrate an LLM-based search engine that understands context, sentiment, and scene descriptions.
+  </p>
+  <h3 class="text-2xl font-bold mb-4 text-white">The Solution</h3>
+  <p class="mb-6 text-gray-300 leading-relaxed">
+    We designed a voice-first interface that sits non-intrusively on top of the viewing experience. By leveraging natural language processing, users can ask "Show me the scene where the detective finds the red notebook," and the system jumps directly to that timestamp.
+  </p>
+  <h3 class="text-2xl font-bold mb-4 text-white">Key Features</h3>
+  <ul class="list-disc list-inside mb-6 text-gray-300 space-y-2">
+    <li>Contextual Voice Search</li>
+    <li>Scene-level indexing</li>
+    <li>Personalized "Mood" recommendations</li>
+  </ul>
+\`;
+
+export const INITIAL_PROJECTS: Project[] = ${JSON.stringify(editingProjects, null, 2)};
+`;
+    
+    navigator.clipboard.writeText(configContent)
+        .then(() => alert("Code Copied to Clipboard! \n\n1. Open your 'constants.ts' file.\n2. Delete everything inside it.\n3. Paste this code.\n4. Push to Vercel to update your live site."))
+        .catch(() => alert("Failed to copy code. Check console for details."));
   };
 
   const deleteProject = (id: string) => {
@@ -418,8 +454,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, profile, proje
         {/* Footer */}
         <div className="p-6 border-t border-gray-700 bg-[#141414] flex justify-end gap-4">
              <button onClick={onClose} className="px-6 py-2 rounded border border-gray-600 hover:bg-gray-800 transition">Cancel</button>
+             <button onClick={exportConfig} className="px-6 py-2 rounded border border-blue-600 text-blue-500 hover:bg-blue-900/20 font-bold transition flex items-center gap-2">
+                <Code size={18} /> Export Code
+             </button>
              <button onClick={saveAll} className="px-6 py-2 rounded bg-red-600 hover:bg-red-700 font-bold transition flex items-center gap-2">
-                <Save size={18} /> Save Changes
+                <Save size={18} /> Save & Close
              </button>
         </div>
       </div>
