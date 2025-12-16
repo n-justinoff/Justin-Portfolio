@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { Project } from '../types';
 import { 
   ArrowLeft, 
@@ -11,6 +11,9 @@ import {
   RotateCcw,
   RotateCw,
   User,
+  X,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 
 interface CaseStudyViewProps {
@@ -28,6 +31,9 @@ const CaseStudyView: React.FC<CaseStudyViewProps> = ({ project, onBack }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isHoveringTimeline, setIsHoveringTimeline] = useState(false);
 
+  // Lightbox State
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const playerRef = useRef<HTMLDivElement>(null);
@@ -42,7 +48,65 @@ const CaseStudyView: React.FC<CaseStudyViewProps> = ({ project, onBack }) => {
     return (match && match[2].length === 11) ? match[2] : null;
   }, [project.heroVideo]);
 
-  // Initial Setup
+  // Helper to send commands to YouTube Iframe
+  const postIframeMessage = useCallback((func: string, args: any[] = []) => {
+      if (iframeRef.current && iframeRef.current.contentWindow) {
+          iframeRef.current.contentWindow.postMessage(JSON.stringify({
+              event: 'command',
+              func: func,
+              args: args
+          }), '*');
+      }
+  }, []);
+
+  const togglePlay = useCallback(() => {
+    if (youtubeId) {
+        if (isPlaying) {
+            postIframeMessage('pauseVideo');
+            setIsPlaying(false); // Optimistic update
+        } else {
+            postIframeMessage('playVideo');
+            setIsPlaying(true); // Optimistic update
+        }
+    } else if (videoRef.current) {
+      if (videoRef.current.paused) {
+        videoRef.current.play();
+        setIsPlaying(true);
+      } else {
+        videoRef.current.pause();
+        setIsPlaying(false);
+      }
+    }
+  }, [youtubeId, isPlaying, postIframeMessage]);
+
+  const toggleFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+        playerRef.current?.requestFullscreen();
+        setIsFullscreen(true);
+    } else {
+        document.exitFullscreen();
+        setIsFullscreen(false);
+    }
+  }, []);
+
+  // Lightbox Navigation Handlers
+  const nextImage = useCallback(() => {
+    if (lightboxIndex !== null && project.gallery) {
+        setLightboxIndex((prev) => (prev! + 1) % project.gallery!.length);
+    }
+  }, [lightboxIndex, project.gallery]);
+
+  const prevImage = useCallback(() => {
+    if (lightboxIndex !== null && project.gallery) {
+        setLightboxIndex((prev) => (prev! - 1 + project.gallery!.length) % project.gallery!.length);
+    }
+  }, [lightboxIndex, project.gallery]);
+
+  const closeLightbox = useCallback(() => {
+    setLightboxIndex(null);
+  }, []);
+
+  // Initial Setup & Keyboard Listeners
   useEffect(() => {
     if (videoRef.current && !youtubeId) {
         // Attempt autoplay for direct video files
@@ -53,6 +117,14 @@ const CaseStudyView: React.FC<CaseStudyViewProps> = ({ project, onBack }) => {
     }
 
     const handleKeyDown = (e: KeyboardEvent) => {
+        // If Lightbox is open, hijack controls
+        if (lightboxIndex !== null) {
+            if (e.key === 'Escape') closeLightbox();
+            if (e.key === 'ArrowRight') nextImage();
+            if (e.key === 'ArrowLeft') prevImage();
+            return;
+        }
+
         if (e.code === 'Space') {
             e.preventDefault();
             togglePlay();
@@ -65,20 +137,15 @@ const CaseStudyView: React.FC<CaseStudyViewProps> = ({ project, onBack }) => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [youtubeId]);
+  }, [youtubeId, lightboxIndex, nextImage, prevImage, closeLightbox, togglePlay, toggleFullscreen]);
 
   // Sync YouTube State via PostMessage Listener
   useEffect(() => {
     if (!youtubeId) return;
 
     const handleMessage = (event: MessageEvent) => {
-        // Ensure message comes from our iframe
-        // Note: checking contentWindow reference can be tricky cross-origin, 
-        // so we mainly check the data structure.
         try {
             const data = JSON.parse(event.data);
-            // YouTube API sends infoDelivery events with playerState
-            // 1 = playing, 2 = paused
             if (data.info && typeof data.info.playerState === 'number') {
                 if (data.info.playerState === 1) setIsPlaying(true);
                 if (data.info.playerState === 2) setIsPlaying(false);
@@ -100,37 +167,6 @@ const CaseStudyView: React.FC<CaseStudyViewProps> = ({ project, onBack }) => {
       const total = videoRef.current.duration;
       setProgress((current / total) * 100);
       setDuration(total);
-    }
-  };
-
-  // Helper to send commands to YouTube Iframe
-  const postIframeMessage = (func: string, args: any[] = []) => {
-      if (iframeRef.current && iframeRef.current.contentWindow) {
-          iframeRef.current.contentWindow.postMessage(JSON.stringify({
-              event: 'command',
-              func: func,
-              args: args
-          }), '*');
-      }
-  };
-
-  const togglePlay = () => {
-    if (youtubeId) {
-        if (isPlaying) {
-            postIframeMessage('pauseVideo');
-            setIsPlaying(false); // Optimistic update
-        } else {
-            postIframeMessage('playVideo');
-            setIsPlaying(true); // Optimistic update
-        }
-    } else if (videoRef.current) {
-      if (videoRef.current.paused) {
-        videoRef.current.play();
-        setIsPlaying(true);
-      } else {
-        videoRef.current.pause();
-        setIsPlaying(false);
-      }
     }
   };
 
@@ -160,16 +196,6 @@ const CaseStudyView: React.FC<CaseStudyViewProps> = ({ project, onBack }) => {
         const x = e.clientX - rect.left;
         const percent = x / rect.width;
         videoRef.current.currentTime = percent * videoRef.current.duration;
-    }
-  };
-
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-        playerRef.current?.requestFullscreen();
-        setIsFullscreen(true);
-    } else {
-        document.exitFullscreen();
-        setIsFullscreen(false);
     }
   };
 
@@ -429,7 +455,8 @@ const CaseStudyView: React.FC<CaseStudyViewProps> = ({ project, onBack }) => {
                                     key={idx}
                                     src={img} 
                                     alt="Gallery" 
-                                    className="w-full rounded-md border border-gray-800 hover:border-gray-500 transition cursor-pointer"
+                                    onClick={() => setLightboxIndex(idx)}
+                                    className="w-full rounded-md border border-gray-800 hover:border-gray-500 transition cursor-zoom-in"
                                 />
                             ))}
                         </div>
@@ -445,6 +472,58 @@ const CaseStudyView: React.FC<CaseStudyViewProps> = ({ project, onBack }) => {
         </div>
 
       </div>
+
+      {/* --- LIGHTBOX OVERLAY --- */}
+      {lightboxIndex !== null && project.gallery && (
+            <div 
+                className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center animate-in fade-in duration-300 backdrop-blur-sm"
+                onClick={closeLightbox}
+            >
+                {/* Close Button */}
+                <button 
+                    className="absolute top-6 right-6 text-white/50 hover:text-white transition p-2 z-50 rounded-full hover:bg-white/10"
+                    onClick={closeLightbox}
+                    title="Close (Esc)"
+                >
+                    <X size={40} />
+                </button>
+
+                {/* Prev Button */}
+                <button 
+                    className="absolute left-4 md:left-8 text-white/50 hover:text-white transition p-3 z-50 rounded-full hover:bg-white/10"
+                    onClick={(e) => { e.stopPropagation(); prevImage(); }}
+                    title="Previous (Arrow Left)"
+                >
+                    <ChevronLeft size={48} />
+                </button>
+
+                {/* Main Image */}
+                <div 
+                    className="relative w-full h-full flex items-center justify-center p-4 md:p-12"
+                    onClick={(e) => e.stopPropagation()} 
+                >
+                    <img 
+                        src={project.gallery[lightboxIndex]} 
+                        alt={`Gallery ${lightboxIndex + 1}`}
+                        className="max-h-full max-w-full object-contain shadow-2xl rounded-sm"
+                    />
+                    
+                    {/* Counter */}
+                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-black/50 px-4 py-1 rounded-full text-white/70 text-sm font-medium backdrop-blur-md border border-white/10">
+                        {lightboxIndex + 1} / {project.gallery.length}
+                    </div>
+                </div>
+
+                {/* Next Button */}
+                <button 
+                    className="absolute right-4 md:right-8 text-white/50 hover:text-white transition p-3 z-50 rounded-full hover:bg-white/10"
+                    onClick={(e) => { e.stopPropagation(); nextImage(); }}
+                    title="Next (Arrow Right)"
+                >
+                    <ChevronRight size={48} />
+                </button>
+            </div>
+      )}
 
     </div>
   );
