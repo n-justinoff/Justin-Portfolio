@@ -8,6 +8,7 @@ export const INITIAL_PROFILE: UserProfile = {
   heroVideo: "https://www.youtube.com/watch?v=LXb3EKWsInQ", // Default Showreel
   avatar: "https://ui-avatars.com/api/?name=Nirmal+Justin&background=0D8ABC&color=fff",
   email: "n.justinoff@gmail.com",
+  resumeUrl: "/Nirmal_Justin_Resume.pdf",
   socials: {
     linkedin: "https://linkedin.com",
     dribbble: "https://dribbble.com",

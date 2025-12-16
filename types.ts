@@ -24,6 +24,7 @@ export interface UserProfile {
   heroVideo?: string;
   avatar: string;
   email: string;
+  resumeUrl?: string;
   socials: {
     linkedin?: string;
     dribbble?: string;

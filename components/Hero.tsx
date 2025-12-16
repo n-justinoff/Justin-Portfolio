@@ -115,8 +115,10 @@ const Hero: React.FC<HeroProps> = ({ profile, onPlay }) => {
               </button>
               
               <a 
-                href="/Nirmal_Justin_Resume.pdf" 
-                download="Nirmal_Justin_Resume.pdf"
+                href={profile.resumeUrl || "/Nirmal_Justin_Resume.pdf"} 
+                download="Resume.pdf"
+                target="_blank"
+                rel="noreferrer"
                 className="flex-1 md:flex-none flex items-center justify-center space-x-2 bg-[#2f2f2f] md:bg-[rgba(109,109,110,0.7)] text-white px-4 md:px-8 py-2.5 md:py-3 rounded-[4px] font-bold hover:bg-[#404040] md:hover:bg-[rgba(109,109,110,0.5)] transition backdrop-blur-md shadow-lg h-10 md:h-auto"
               >
                 <Download className="w-5 h-5 md:w-6 md:h-6" />

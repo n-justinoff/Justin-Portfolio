@@ -286,6 +286,29 @@ export const INITIAL_PROJECTS: Project[] = ${JSON.stringify(editingProjects, nul
                             rows={4}
                             className="w-full bg-[#2a2a2a] border border-gray-700 rounded p-3 text-white focus:border-red-600 outline-none" 
                         />
+                        
+                        {/* Resume Section */}
+                        <div className="space-y-2">
+                             <label className="block text-sm font-medium text-gray-400">Resume / CV</label>
+                             <div className="flex gap-2">
+                                <input 
+                                    value={editingProfile.resumeUrl || ''}
+                                    onChange={(e) => handleProfileChange('resumeUrl', e.target.value)}
+                                    placeholder="Enter PDF URL"
+                                    className="flex-1 bg-[#2a2a2a] border border-gray-700 rounded p-3 text-white focus:border-red-600 outline-none" 
+                                />
+                                <label className="cursor-pointer bg-[#333] hover:bg-[#444] text-white px-4 rounded border border-gray-600 flex items-center justify-center transition" title="Upload PDF">
+                                    <Upload size={18} />
+                                    <input 
+                                        type="file" 
+                                        accept="application/pdf" 
+                                        className="hidden" 
+                                        onChange={(e) => handleFileUpload(e, 'resumeUrl')}
+                                    />
+                                </label>
+                             </div>
+                             <p className="text-xs text-gray-500">Provide a link or upload a PDF (Converted to Data URI)</p>
+                        </div>
 
                         {/* Hero Video Section (New) */}
                         <div className="space-y-2">
