@@ -68,6 +68,29 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, profile, proje
     }
   };
 
+  const handleGalleryUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+        const promises = Array.from(files).map(file => {
+            return new Promise<string>((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    resolve(reader.result as string);
+                };
+                reader.readAsDataURL(file as Blob);
+            });
+        });
+
+        Promise.all(promises).then(base64Images => {
+             setGalleryText(prev => {
+                const current = prev.trim();
+                const newContent = base64Images.join('\n');
+                return current ? `${current}\n${newContent}` : newContent;
+             });
+        });
+    }
+  };
+
   const saveAll = () => {
     try {
         onUpdateProfile(editingProfile);
@@ -452,12 +475,29 @@ export const INITIAL_PROJECTS: Project[] = ${JSON.stringify(editingProjects, nul
                                             className="w-full bg-[#141414] border border-gray-600 rounded p-2 text-white h-32 font-mono text-sm"
                                         />
                                         
-                                        <textarea 
-                                            placeholder="Gallery Image URLs (One per line)"
-                                            value={galleryText}
-                                            onChange={(e) => setGalleryText(e.target.value)}
-                                            className="w-full bg-[#141414] border border-gray-600 rounded p-2 text-white h-24 font-mono text-sm"
-                                        />
+                                        <div className="space-y-2">
+                                            <label className="block text-sm font-medium text-gray-400">Gallery Images</label>
+                                            <div className="flex gap-2">
+                                                <textarea 
+                                                    placeholder="Gallery Image URLs (One per line)"
+                                                    value={galleryText}
+                                                    onChange={(e) => setGalleryText(e.target.value)}
+                                                    className="flex-1 bg-[#141414] border border-gray-600 rounded p-2 text-white h-24 font-mono text-sm"
+                                                />
+                                                <label className="cursor-pointer bg-[#333] hover:bg-[#444] text-white px-3 py-2 rounded border border-gray-600 flex flex-col items-center justify-center w-24 transition" title="Upload Images">
+                                                    <Upload size={20} className="mb-1" />
+                                                    <span className="text-[10px] text-center leading-tight">Add Images</span>
+                                                    <input 
+                                                        type="file" 
+                                                        accept="image/*" 
+                                                        multiple
+                                                        className="hidden" 
+                                                        onChange={handleGalleryUpload}
+                                                    />
+                                                </label>
+                                            </div>
+                                            <p className="text-xs text-gray-500">Supports URLs or Local File Uploads (Multiple)</p>
+                                        </div>
                                         
                                         <input 
                                             placeholder="Main Tag (e.g. Featured)"
