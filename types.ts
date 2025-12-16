@@ -21,6 +21,7 @@ export interface UserProfile {
   title: string;
   bio: string;
   heroImage: string;
+  heroVideo?: string; // Added for the main Hero Play button
   avatar: string;
   email: string;
   socials: {

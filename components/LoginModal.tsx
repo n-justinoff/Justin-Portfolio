@@ -66,9 +66,6 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin }) => 
                 <div className="flex justify-between">
                     <span className="text-gray-400">Login to manage portfolio</span>
                 </div>
-                <p className="text-xs text-gray-600 mt-4">
-                    Debug Hint: The password is <span className="font-mono text-gray-500">admin123</span>
-                </p>
             </div>
         </form>
       </div>

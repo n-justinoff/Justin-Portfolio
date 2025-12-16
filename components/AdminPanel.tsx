@@ -222,6 +222,18 @@ export const INITIAL_PROJECTS: Project[] = ${JSON.stringify(editingProjects, nul
                             className="w-full bg-[#2a2a2a] border border-gray-700 rounded p-3 text-white focus:border-red-600 outline-none" 
                         />
 
+                        {/* Hero Video Section (New) */}
+                        <div className="space-y-2">
+                             <label className="block text-sm font-medium text-gray-400">Hero Video URL (Main Showreel)</label>
+                             <input 
+                                value={editingProfile.heroVideo || ''}
+                                onChange={(e) => handleProfileChange('heroVideo', e.target.value)}
+                                placeholder="Enter YouTube or MP4 URL"
+                                className="w-full bg-[#2a2a2a] border border-gray-700 rounded p-3 text-white focus:border-red-600 outline-none" 
+                             />
+                             <p className="text-xs text-gray-500">This video plays when the main "Play" button is clicked.</p>
+                        </div>
+
                         {/* Hero Image Section */}
                         <div className="space-y-2">
                              <label className="block text-sm font-medium text-gray-400">Hero Image (Background)</label>

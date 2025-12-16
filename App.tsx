@@ -118,9 +118,31 @@ const App = () => {
   };
 
   const handleHeroPlay = () => {
-    // Treat the Hero "Play" button as clicking a restricted project
-    // We pass a dummy project or the first project just to trigger the view
-    setRestrictedViewProject(projects[0] || {} as Project);
+    // Treat the Hero "Play" button as playing the showreel
+    if (profile.heroVideo) {
+        // Create a temporary project object to reuse the CaseStudyView video player
+        const showreelProject: Project = {
+            id: 'hero-showreel',
+            title: `${profile.name} - Showreel`,
+            description: profile.bio,
+            imageUrl: profile.heroImage,
+            heroVideo: profile.heroVideo,
+            category: 'Showreel',
+            tags: ['Showreel', 'Highlights', new Date().getFullYear().toString()],
+            year: new Date().getFullYear(),
+            role: profile.title,
+            platform: 'Video',
+            gallery: [],
+            isRestricted: false,
+            fullDescription: `<h3>About Me</h3><p>${profile.bio}</p>`
+        };
+        setViewingCaseStudy(showreelProject);
+    } else {
+        // Fallback if no video is set, just show the first project or error
+        if (projects.length > 0) {
+            handleOpenCaseStudy(projects[0]);
+        }
+    }
   };
 
   const handleAdminClick = () => {
