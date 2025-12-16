@@ -39,7 +39,9 @@ const App = () => {
 
     if (savedProfile) {
       try {
-        setProfile(JSON.parse(savedProfile));
+        const parsedProfile = JSON.parse(savedProfile);
+        // MERGE: Ensure new fields from INITIAL_PROFILE (like heroVideo) are present if missing in local storage
+        setProfile({ ...INITIAL_PROFILE, ...parsedProfile });
       } catch (e) { console.error("Error parsing profile", e); }
     }
 
@@ -138,9 +140,17 @@ const App = () => {
         };
         setViewingCaseStudy(showreelProject);
     } else {
-        // Fallback if no video is set, just show the first project or error
+        // Fallback: If no video is set, just show the first project or error
+        // But also check if it's restricted to avoid confusing error
         if (projects.length > 0) {
-            handleOpenCaseStudy(projects[0]);
+            const first = projects[0];
+            if (first.isRestricted) {
+               // If first project is restricted, and no hero video, show admin generic msg or nothing?
+               // For now, let it hit the restriction page so they know they need content.
+               handleOpenCaseStudy(first);
+            } else {
+               handleOpenCaseStudy(first);
+            }
         }
     }
   };

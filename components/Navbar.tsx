@@ -118,7 +118,7 @@ const Navbar: React.FC<NavbarProps> = ({ onOpenAdmin, avatar, onSearch }) => {
                     <div className={`${isSearchOpen ? 'hidden lg:flex' : 'flex'} items-center space-x-4`}>
                         <button 
                             onClick={scrollToTop}
-                            className="text-black text-sm font-bold bg-white px-5 py-1.5 rounded-full shadow-lg hover:bg-gray-200 transition transform hover:scale-105"
+                            className="text-black font-extrabold bg-white px-5 py-1.5 rounded-full shadow-lg hover:bg-gray-200 transition transform hover:scale-105 text-sm"
                         >
                             Home
                         </button>
