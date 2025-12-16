@@ -8,6 +8,48 @@ interface HeroProps {
 }
 
 const Hero: React.FC<HeroProps> = ({ profile, onPlay }) => {
+  
+  // Helper to determine availability visuals
+  const getAvailabilityInfo = () => {
+    // Fallback if availability is undefined (e.g., old local storage data)
+    const { status, date } = profile.availability || { status: 'unavailable', date: '' };
+
+    if (status === 'available') {
+        return { 
+            text: 'Available for Work', 
+            color: 'text-green-500', 
+            iconColor: 'text-green-500',
+            badgeBorder: 'border-green-500'
+        };
+    } else if (status === 'unavailable') {
+        return { 
+            text: 'Not Available', 
+            color: 'text-red-500', 
+            iconColor: 'text-red-500',
+            badgeBorder: 'border-red-500'
+        };
+    } else if (status === 'date' && date) {
+        const dateObj = new Date(date);
+        // Format date: e.g., "June 27"
+        const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+        return { 
+            text: `Coming ${formattedDate}`, 
+            color: 'text-white', 
+            iconColor: 'text-pink-500',
+            badgeBorder: 'border-white'
+        };
+    }
+    // Fallback
+    return { 
+        text: 'Contact for Info', 
+        color: 'text-gray-400', 
+        iconColor: 'text-gray-400',
+        badgeBorder: 'border-gray-400' 
+    };
+  };
+
+  const { text, color, iconColor, badgeBorder } = getAvailabilityInfo();
+
   return (
     <div className="relative h-auto aspect-[2/3] md:aspect-auto md:h-[80vh] w-full rounded-2xl md:rounded-[2rem] overflow-hidden shadow-2xl group ring-1 ring-white/10 bg-[#141414]">
       {/* Background Image */}
@@ -26,11 +68,11 @@ const Hero: React.FC<HeroProps> = ({ profile, onPlay }) => {
       </div>
 
       {/* Mobile Top Right Badge (Availability) */}
-      <div className="md:hidden absolute top-4 right-0 bg-[#181818]/80 backdrop-blur-md border-l-2 border-white py-1.5 px-3 flex items-center space-x-2 rounded-l shadow-2xl z-20">
-             <Calendar className="text-pink-500 w-3 h-3" />
+      <div className={`md:hidden absolute top-4 right-0 bg-[#181818]/80 backdrop-blur-md border-l-2 ${badgeBorder} py-1.5 px-3 flex items-center space-x-2 rounded-l shadow-2xl z-20`}>
+             <Calendar className={`${iconColor} w-3 h-3`} />
              <div className="flex flex-col">
                 <span className="uppercase text-[6px] font-bold text-gray-400 tracking-wider leading-tight">Availability</span>
-                <span className="font-bold text-white text-[10px] leading-tight">Coming June 27</span>
+                <span className={`font-bold ${status === 'available' ? 'text-white' : color} text-[10px] leading-tight`}>{text}</span>
              </div>
       </div>
 
@@ -90,11 +132,11 @@ const Hero: React.FC<HeroProps> = ({ profile, onPlay }) => {
       </div>
       
       {/* Desktop Bottom Right Badge (Absolute) */}
-      <div className="hidden md:flex absolute bottom-[12%] right-0 bg-[#181818]/60 backdrop-blur-md border-l-4 border-white py-2 px-5 items-center space-x-3 rounded-l-md shadow-2xl z-20">
-          <Calendar className="text-pink-500 w-5 h-5" />
+      <div className={`hidden md:flex absolute bottom-[12%] right-0 bg-[#181818]/60 backdrop-blur-md border-l-4 ${badgeBorder} py-2 px-5 items-center space-x-3 rounded-l-md shadow-2xl z-20`}>
+          <Calendar className={`${iconColor} w-5 h-5`} />
           <div className="flex flex-col">
             <span className="uppercase text-[10px] font-bold text-gray-400 tracking-wider">Availability</span>
-            <span className="font-bold text-white text-sm">Coming June 27</span>
+            <span className={`font-bold ${profile.availability?.status === 'available' ? 'text-white' : color} text-sm`}>{text}</span>
           </div>
       </div>
     </div>

@@ -46,6 +46,17 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, profile, proje
     setEditingProfile({ ...editingProfile, [field]: value });
   };
 
+  // Helper for nested availability object
+  const handleAvailabilityChange = (field: 'status' | 'date', value: string) => {
+    setEditingProfile({
+        ...editingProfile,
+        availability: {
+            ...(editingProfile.availability || { status: 'unavailable' }),
+            [field]: value
+        }
+    });
+  };
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, field: keyof UserProfile) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -213,6 +224,37 @@ export const INITIAL_PROJECTS: Project[] = ${JSON.stringify(editingProjects, nul
                             onChange={(e) => handleProfileChange('title', e.target.value)}
                             className="w-full bg-[#2a2a2a] border border-gray-700 rounded p-3 text-white focus:border-red-600 outline-none" 
                         />
+
+                        {/* Availability Section */}
+                        <div className="space-y-4 p-4 bg-[#2a2a2a] rounded border border-gray-700">
+                            <h4 className="text-sm font-bold text-white uppercase tracking-wider">Availability Status</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-400 mb-1">Status</label>
+                                    <select 
+                                        value={editingProfile.availability?.status || 'unavailable'}
+                                        onChange={(e) => handleAvailabilityChange('status', e.target.value)}
+                                        className="w-full bg-[#141414] border border-gray-600 rounded p-3 text-white focus:border-red-600 outline-none"
+                                    >
+                                        <option value="available">Available Now</option>
+                                        <option value="unavailable">Not Available</option>
+                                        <option value="date">Available From (Date)</option>
+                                    </select>
+                                </div>
+                                
+                                {editingProfile.availability?.status === 'date' && (
+                                    <div className="animate-in fade-in duration-300">
+                                        <label className="block text-sm font-medium text-gray-400 mb-1">Select Date</label>
+                                        <input 
+                                            type="date"
+                                            value={editingProfile.availability?.date || ''}
+                                            onChange={(e) => handleAvailabilityChange('date', e.target.value)}
+                                            className="w-full bg-[#141414] border border-gray-600 rounded p-3 text-white focus:border-red-600 outline-none"
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        </div>
 
                         <label className="block text-sm font-medium text-gray-400">Bio</label>
                         <textarea 

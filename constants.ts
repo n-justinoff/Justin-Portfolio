@@ -12,6 +12,10 @@ export const INITIAL_PROFILE: UserProfile = {
     linkedin: "https://linkedin.com",
     dribbble: "https://dribbble.com",
     twitter: "https://twitter.com"
+  },
+  availability: {
+    status: "date",
+    date: "2025-06-27"
   }
 };
 

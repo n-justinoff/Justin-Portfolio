@@ -21,13 +21,17 @@ export interface UserProfile {
   title: string;
   bio: string;
   heroImage: string;
-  heroVideo?: string; // Added for the main Hero Play button
+  heroVideo?: string;
   avatar: string;
   email: string;
   socials: {
     linkedin?: string;
     dribbble?: string;
     twitter?: string;
+  };
+  availability: {
+    status: "available" | "unavailable" | "date";
+    date?: string;
   };
 }
 
