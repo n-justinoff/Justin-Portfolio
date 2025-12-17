@@ -33,7 +33,7 @@ const Row: React.FC<RowProps> = ({ title, projects, onSelectProject, onOpenCaseS
   if (projects.length === 0) return null;
 
   return (
-    <div className="h-fit space-y-0.5 md:space-y-2 px-4 md:px-12 py-8 group">
+    <div className="h-fit space-y-0.5 md:space-y-2 px-4 md:px-12 py-4 md:py-8 group">
       <h2 className="w-56 cursor-pointer text-sm font-semibold text-[#e5e5e5] transition duration-200 hover:text-white md:text-2xl">
         {title}
       </h2>

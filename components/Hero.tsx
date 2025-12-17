@@ -51,7 +51,7 @@ const Hero: React.FC<HeroProps> = ({ profile, onPlay }) => {
   const { text, color, iconColor, badgeBorder } = getAvailabilityInfo();
 
   return (
-    <div className="relative h-auto aspect-[2/3] md:aspect-auto md:h-[80vh] w-full rounded-2xl md:rounded-[2rem] overflow-hidden shadow-2xl group ring-1 ring-white/10 bg-[#141414]">
+    <div className="relative h-auto aspect-[3/4] md:aspect-auto md:h-[80vh] w-full rounded-2xl md:rounded-[2rem] overflow-hidden shadow-2xl group ring-1 ring-white/10 bg-[#141414]">
       {/* Background Image */}
       <div className="absolute top-0 left-0 w-full h-full">
         <img 
@@ -77,7 +77,7 @@ const Hero: React.FC<HeroProps> = ({ profile, onPlay }) => {
       </div>
 
       {/* Content Container */}
-      <div className="absolute bottom-0 left-0 w-full z-10 flex flex-col justify-end pb-8 md:block md:bottom-[12%] md:left-12 md:pb-0">
+      <div className="absolute bottom-0 left-0 w-full z-10 flex flex-col justify-end pb-4 md:block md:bottom-[12%] md:left-12 md:pb-0">
         
         {/* Inner Wrapper: Centered on Mobile, Left-Aligned on Desktop */}
         <div className="flex flex-col items-center text-center px-4 w-full md:items-start md:text-left md:max-w-2xl md:px-0 space-y-3 md:space-y-6">
@@ -117,8 +117,6 @@ const Hero: React.FC<HeroProps> = ({ profile, onPlay }) => {
               <a 
                 href={profile.resumeUrl || "/Nirmal_Justin_Resume.pdf"} 
                 download="Resume.pdf"
-                target="_blank"
-                rel="noreferrer"
                 className="flex-1 md:flex-none flex items-center justify-center space-x-2 bg-[#2f2f2f] md:bg-[rgba(109,109,110,0.7)] text-white px-4 md:px-8 py-2.5 md:py-3 rounded-[4px] font-bold hover:bg-[#404040] md:hover:bg-[rgba(109,109,110,0.5)] transition backdrop-blur-md shadow-lg h-10 md:h-auto"
               >
                 <Download className="w-5 h-5 md:w-6 md:h-6" />
@@ -126,9 +124,9 @@ const Hero: React.FC<HeroProps> = ({ profile, onPlay }) => {
               </a>
             </div>
 
-             {/* Description - Hidden on Mobile to match clean screenshot look, visible on Desktop */}
-             <p className="hidden md:block text-gray-300 text-lg md:text-xl font-medium max-w-lg drop-shadow-md">
-                I love watching movies, so why not a portfolio like that?
+             {/* Description - Visible on Mobile now */}
+             <p className="block text-gray-300 text-xs md:text-xl font-medium max-w-lg drop-shadow-md opacity-80 md:opacity-100">
+                {profile.tagline || "I love watching movies, so why not a portfolio like that?"}
             </p>
         </div>
       </div>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Project, UserProfile, CATEGORIES } from '../types';
-import { X, Save, Trash2, Plus, Edit2, ChevronDown, ChevronUp, Upload, Code } from 'lucide-react';
+import { X, Save, Trash2, Plus, Edit2, ChevronDown, ChevronUp, Upload, Code, FileDown, AlertTriangle } from 'lucide-react';
 
 interface AdminPanelProps {
   isOpen: boolean;
@@ -60,6 +60,13 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, profile, proje
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, field: keyof UserProfile) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Warning for large files
+      if (file.size > 500 * 1024) { // 500KB
+        if (!confirm(`This file is ${(file.size / 1024 / 1024).toFixed(2)}MB. Embedding large files makes your code difficult to manage and commit to Git.\n\nRecommended: Put this file in your 'public' folder and use the path (e.g. '/my-image.jpg') instead.\n\nDo you still want to embed it?`)) {
+            return;
+        }
+      }
+
       const reader = new FileReader();
       reader.onloadend = () => {
         handleProfileChange(field, reader.result as string);
@@ -134,9 +141,28 @@ const LOREM_IPSUM = \`
 export const INITIAL_PROJECTS: Project[] = ${JSON.stringify(editingProjects, null, 2)};
 `;
     
-    navigator.clipboard.writeText(configContent)
-        .then(() => alert("Code Copied to Clipboard! \n\n1. Open your 'constants.ts' file.\n2. Delete everything inside it.\n3. Paste this code.\n4. Push to Vercel to update your live site."))
-        .catch(() => alert("Failed to copy code. Check console for details."));
+    // Check size (approx 1 character = 1 byte for ASCII, more for others, but length is a good proxy)
+    const sizeInBytes = new Blob([configContent]).size;
+    const sizeInMB = sizeInBytes / (1024 * 1024);
+
+    if (sizeInMB > 1) {
+        // If file is > 1MB, download it directly
+        const blob = new Blob([configContent], { type: 'text/typescript' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'constants.ts';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        alert(`Your configuration is large (${sizeInMB.toFixed(2)} MB).\n\nInstead of copying to clipboard, we have downloaded 'constants.ts' to your computer.\n\nPlease replace the file in your project folder manually.`);
+    } else {
+        // Small enough to copy
+        navigator.clipboard.writeText(configContent)
+            .then(() => alert("Code Copied to Clipboard! \n\n1. Open your 'constants.ts' file.\n2. Delete everything inside it.\n3. Paste this code.\n4. Push to Vercel to update your live site."))
+            .catch(() => alert("Failed to copy code. Check console for details."));
+    }
   };
 
   const deleteProject = (id: string) => {
@@ -248,6 +274,15 @@ export const INITIAL_PROJECTS: Project[] = ${JSON.stringify(editingProjects, nul
                             className="w-full bg-[#2a2a2a] border border-gray-700 rounded p-3 text-white focus:border-red-600 outline-none" 
                         />
 
+                        <label className="block text-sm font-medium text-gray-400">Tagline (Subtitle)</label>
+                        <textarea 
+                            value={editingProfile.tagline || ''}
+                            onChange={(e) => handleProfileChange('tagline', e.target.value)}
+                            rows={2}
+                            placeholder="I love watching movies, so why not a portfolio like that?"
+                            className="w-full bg-[#2a2a2a] border border-gray-700 rounded p-3 text-white focus:border-red-600 outline-none" 
+                        />
+
                         {/* Availability Section */}
                         <div className="space-y-4 p-4 bg-[#2a2a2a] rounded border border-gray-700">
                             <h4 className="text-sm font-bold text-white uppercase tracking-wider">Availability Status</h4>
@@ -289,12 +324,18 @@ export const INITIAL_PROJECTS: Project[] = ${JSON.stringify(editingProjects, nul
                         
                         {/* Resume Section */}
                         <div className="space-y-2">
-                             <label className="block text-sm font-medium text-gray-400">Resume / CV</label>
+                             <div className="flex items-center justify-between">
+                                <label className="block text-sm font-medium text-gray-400">Resume / CV</label>
+                                <div className="text-[10px] text-yellow-500 flex items-center gap-1">
+                                    <AlertTriangle size={12} />
+                                    <span>Tip: Use URL for large files</span>
+                                </div>
+                             </div>
                              <div className="flex gap-2">
                                 <input 
                                     value={editingProfile.resumeUrl || ''}
                                     onChange={(e) => handleProfileChange('resumeUrl', e.target.value)}
-                                    placeholder="Enter PDF URL"
+                                    placeholder="Enter PDF URL (e.g. /resume.pdf)"
                                     className="flex-1 bg-[#2a2a2a] border border-gray-700 rounded p-3 text-white focus:border-red-600 outline-none" 
                                 />
                                 <label className="cursor-pointer bg-[#333] hover:bg-[#444] text-white px-4 rounded border border-gray-600 flex items-center justify-center transition" title="Upload PDF">
@@ -307,7 +348,9 @@ export const INITIAL_PROJECTS: Project[] = ${JSON.stringify(editingProjects, nul
                                     />
                                 </label>
                              </div>
-                             <p className="text-xs text-gray-500">Provide a link or upload a PDF (Converted to Data URI)</p>
+                             <p className="text-xs text-gray-500">
+                                Best Practice: Place <code>resume.pdf</code> in your <code>public</code> folder and enter <code>/resume.pdf</code> above.
+                             </p>
                         </div>
 
                         {/* Hero Video Section (New) */}
@@ -572,7 +615,8 @@ export const INITIAL_PROJECTS: Project[] = ${JSON.stringify(editingProjects, nul
         <div className="p-6 border-t border-gray-700 bg-[#141414] flex justify-end gap-4">
              <button onClick={onClose} className="px-6 py-2 rounded border border-gray-600 hover:bg-gray-800 transition">Cancel</button>
              <button onClick={exportConfig} className="px-6 py-2 rounded border border-blue-600 text-blue-500 hover:bg-blue-900/20 font-bold transition flex items-center gap-2">
-                <Code size={18} /> Export Code
+                {new Blob([JSON.stringify(editingProjects)]).size > 1000000 ? <FileDown size={18} /> : <Code size={18} />} 
+                {new Blob([JSON.stringify(editingProjects)]).size > 1000000 ? "Download Config" : "Export Code"}
              </button>
              <button onClick={saveAll} className="px-6 py-2 rounded bg-red-600 hover:bg-red-700 font-bold transition flex items-center gap-2">
                 <Save size={18} /> Save & Close

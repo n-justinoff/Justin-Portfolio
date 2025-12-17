@@ -223,12 +223,14 @@ const App = () => {
       ) : (
         <>
             {/* Hero Section: Card on Desktop AND Mobile */}
-            <div className="pt-24 px-4 pb-4 md:pt-24 md:px-12 md:pb-0">
+            {/* Reduced pb-4 (16px) to pb-1.5 (6px) on mobile -> 10px difference */}
+            <div className="pt-24 px-4 pb-1.5 md:pt-24 md:px-12 md:pb-0">
                <Hero profile={profile} onPlay={handleHeroPlay} />
             </div>
 
             {/* Rows Section - Added ID for scrolling */}
-            <div id="projects-section" className="relative z-20 mt-4 md:mt-8 pl-4 md:pl-12 space-y-8 md:space-y-12">
+            {/* Reduced space-y-8 (32px) to space-y-4 (16px) on mobile */}
+            <div id="projects-section" className="relative z-20 mt-4 md:mt-8 pl-4 md:pl-12 space-y-4 md:space-y-12">
                 <h3 className="text-xl md:text-2xl font-bold text-gray-400 mb-[-10px]">Your Next Watch</h3>
                 {/* Render rows based on Categories that actually have projects */}
                 {CATEGORIES.map((category) => {

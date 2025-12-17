@@ -19,6 +19,7 @@ export interface Project {
 export interface UserProfile {
   name: string;
   title: string;
+  tagline?: string;
   bio: string;
   heroImage: string;
   heroVideo?: string;
