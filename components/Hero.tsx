@@ -51,22 +51,41 @@ const Hero: React.FC<HeroProps> = ({ profile, onPlay }) => {
   const { text, color, iconColor, badgeBorder } = getAvailabilityInfo();
 
   // Robust download handler for mobile and desktop
-  const handleDownloadClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+  const handleDownloadClick = async (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
     const url = profile.resumeUrl || "/Nirmal_Justin_Resume.pdf";
     
-    // If the URL is a base64 data URL (uploaded via Admin Panel)
-    if (url.startsWith('data:')) {
-      e.preventDefault();
+    try {
+      // If the URL is a base64 data URL (uploaded via Admin Panel)
+      if (url.startsWith('data:')) {
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = "Resume.pdf";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        return;
+      }
+
+      // For standard URLs, we fetch and create a blob to force the filename on mobile
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      
       const link = document.createElement('a');
-      link.href = url;
+      link.href = blobUrl;
       link.download = "Resume.pdf";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      
+      // Cleanup the blob URL after a short delay
+      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
+    } catch (error) {
+      console.error("Download failed, falling back to direct navigation", error);
+      // Fallback: Just open the URL in a new window/tab
+      window.open(url, '_blank');
     }
-    // For standard URLs, we let the default <a> behavior handle it.
-    // NOTE: If downloading as .html on mobile, it means the server is returning HTML 
-    // for that path (e.g. 404 page). The user must ensure the file exists at the path.
   };
 
   return (
