@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Project, UserProfile, CATEGORIES } from '../types';
-import { X, Save, Trash2, Plus, Edit2, ChevronDown, ChevronUp, Upload, Code, FileDown, AlertTriangle } from 'lucide-react';
+import { X, Save, Trash2, Plus, Edit2, ChevronDown, ChevronUp, Upload, Code, FileDown, AlertTriangle, Link } from 'lucide-react';
 
 interface AdminPanelProps {
   isOpen: boolean;
@@ -32,12 +32,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, profile, proje
     fullDescription: '',
     gallery: [],
     link: '',
-    isRestricted: false // Default to having content (not restricted)
+    isRestricted: false
   };
 
   const [currentProject, setCurrentProject] = useState<Partial<Project>>(initialProjectState);
-  
-  // Helper for gallery textarea
   const [galleryText, setGalleryText] = useState("");
 
   if (!isOpen) return null;
@@ -46,7 +44,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, profile, proje
     setEditingProfile({ ...editingProfile, [field]: value });
   };
 
-  // Helper for nested availability object
   const handleAvailabilityChange = (field: 'status' | 'date', value: string) => {
     setEditingProfile({
         ...editingProfile,
@@ -60,9 +57,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, profile, proje
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, field: keyof UserProfile) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Warning for large files
-      if (file.size > 500 * 1024) { // 500KB
-        if (!confirm(`This file is ${(file.size / 1024 / 1024).toFixed(2)}MB. Embedding large files makes your code difficult to manage and commit to Git.\n\nRecommended: Put this file in your 'public' folder and use the path (e.g. '/my-image.jpg') instead.\n\nDo you still want to embed it?`)) {
+      if (file.size > 500 * 1024) {
+        if (!confirm(`This file is ${(file.size / 1024 / 1024).toFixed(2)}MB. Embedding large files makes your code heavy.\n\nRecommended: Upload to Google Drive and paste the link, or put it in your 'public' folder.\n\nDo you still want to embed it?`)) {
             return;
         }
       }
@@ -102,10 +98,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, profile, proje
     try {
         onUpdateProfile(editingProfile);
         onUpdateProjects(editingProjects);
-        alert('Changes Saved to Local Browser Storage! \n\nTo make these live for everyone, use the "Export Code" button and update your constants.ts file.');
+        alert('Changes Saved Locally!');
         onClose();
     } catch (e) {
-        alert('Error saving changes. If you uploaded a large image, it might exceed local storage limits.');
+        alert('Error saving changes. Local storage might be full.');
         console.error(e);
     }
   };
@@ -114,63 +110,25 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, profile, proje
     const configContent = `import { Project, UserProfile } from './types';
 
 export const INITIAL_PROFILE: UserProfile = ${JSON.stringify(editingProfile, null, 2)};
-
-const SAMPLE_GALLERY = [
-  "https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=1974&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1964&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=2070&auto=format&fit=crop"
-];
-
-const LOREM_IPSUM = \`
-  <h3 class="text-2xl font-bold mb-4 text-white">The Challenge</h3>
-  <p class="mb-6 text-gray-300 leading-relaxed">
-    Users often struggle to find specific content within vast libraries of streaming content. The traditional keyword search is often insufficient for vague queries or describing visual moments. Our goal was to integrate an LLM-based search engine that understands context, sentiment, and scene descriptions.
-  </p>
-  <h3 class="text-2xl font-bold mb-4 text-white">The Solution</h3>
-  <p class="mb-6 text-gray-300 leading-relaxed">
-    We designed a voice-first interface that sits non-intrusively on top of the viewing experience. By leveraging natural language processing, users can ask "Show me the scene where the detective finds the red notebook," and the system jumps directly to that timestamp.
-  </p>
-  <h3 class="text-2xl font-bold mb-4 text-white">Key Features</h3>
-  <ul class="list-disc list-inside mb-6 text-gray-300 space-y-2">
-    <li>Contextual Voice Search</li>
-    <li>Scene-level indexing</li>
-    <li>Personalized "Mood" recommendations</li>
-  </ul>
-\`;
-
 export const INITIAL_PROJECTS: Project[] = ${JSON.stringify(editingProjects, null, 2)};
 `;
     
-    // Check size (approx 1 character = 1 byte for ASCII, more for others, but length is a good proxy)
-    const sizeInBytes = new Blob([configContent]).size;
-    const sizeInMB = sizeInBytes / (1024 * 1024);
-
-    if (sizeInMB > 1) {
-        // If file is > 1MB, download it directly
-        const blob = new Blob([configContent], { type: 'text/typescript' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'constants.ts';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        alert(`Your configuration is large (${sizeInMB.toFixed(2)} MB).\n\nInstead of copying to clipboard, we have downloaded 'constants.ts' to your computer.\n\nPlease replace the file in your project folder manually.`);
-    } else {
-        // Small enough to copy
-        navigator.clipboard.writeText(configContent)
-            .then(() => alert("Code Copied to Clipboard! \n\n1. Open your 'constants.ts' file.\n2. Delete everything inside it.\n3. Paste this code.\n4. Push to Vercel to update your live site."))
-            .catch(() => alert("Failed to copy code. Check console for details."));
-    }
+    const blob = new Blob([configContent], { type: 'text/typescript' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'constants.ts';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    alert(`Configuration downloaded! Replace 'constants.ts' with this file.`);
   };
 
   const deleteProject = (id: string) => {
     if(confirm('Are you sure you want to delete this project?')) {
         setEditingProjects(editingProjects.filter(p => p.id !== id));
-        if (isEditingId === id) {
-            resetForm();
-        }
+        if (isEditingId === id) resetForm();
     }
   };
 
@@ -178,7 +136,6 @@ export const INITIAL_PROJECTS: Project[] = ${JSON.stringify(editingProjects, nul
       setIsEditingId(project.id);
       setCurrentProject(project);
       setGalleryText(project.gallery ? project.gallery.join('\n') : "");
-      // Scroll to form
       document.querySelector('.project-form')?.scrollIntoView({ behavior: 'smooth' });
   };
 
@@ -209,7 +166,6 @@ export const INITIAL_PROJECTS: Project[] = ${JSON.stringify(editingProjects, nul
         platform: currentProject.platform,
         mainTag: currentProject.mainTag,
         link: currentProject.link || '#',
-        // If restricted (no content selected), clear description/gallery, or keep them but ignore them
         fullDescription: currentProject.fullDescription,
         gallery: processedGallery,
         isRestricted: currentProject.isRestricted || false
@@ -224,9 +180,6 @@ export const INITIAL_PROJECTS: Project[] = ${JSON.stringify(editingProjects, nul
     resetForm();
   };
 
-  // Helper to determine if we are in "Add Content" mode
-  // If isRestricted is true -> We DO NOT have content -> Checkbox unchecked
-  // If isRestricted is false -> We HAVE content -> Checkbox checked
   const hasContent = !currentProject.isRestricted;
 
   return (
@@ -243,13 +196,13 @@ export const INITIAL_PROJECTS: Project[] = ${JSON.stringify(editingProjects, nul
         <div className="flex border-b border-gray-700 bg-[#141414]">
             <button 
                 onClick={() => setActiveTab('profile')}
-                className={`flex-1 py-4 text-center font-semibold hover:bg-[#1f1f1f] transition ${activeTab === 'profile' ? 'text-red-600 border-b-2 border-red-600' : 'text-gray-400'}`}
+                className={`flex-1 py-4 text-center font-semibold transition ${activeTab === 'profile' ? 'text-red-600 border-b-2 border-red-600' : 'text-gray-400'}`}
             >
                 Edit Profile
             </button>
             <button 
                 onClick={() => setActiveTab('projects')}
-                className={`flex-1 py-4 text-center font-semibold hover:bg-[#1f1f1f] transition ${activeTab === 'projects' ? 'text-red-600 border-b-2 border-red-600' : 'text-gray-400'}`}
+                className={`flex-1 py-4 text-center font-semibold transition ${activeTab === 'projects' ? 'text-red-600 border-b-2 border-red-600' : 'text-gray-400'}`}
             >
                 Manage Projects
             </button>
@@ -274,16 +227,7 @@ export const INITIAL_PROJECTS: Project[] = ${JSON.stringify(editingProjects, nul
                             className="w-full bg-[#2a2a2a] border border-gray-700 rounded p-3 text-white focus:border-red-600 outline-none" 
                         />
 
-                        <label className="block text-sm font-medium text-gray-400">Tagline (Subtitle)</label>
-                        <textarea 
-                            value={editingProfile.tagline || ''}
-                            onChange={(e) => handleProfileChange('tagline', e.target.value)}
-                            rows={2}
-                            placeholder="I love watching movies, so why not a portfolio like that?"
-                            className="w-full bg-[#2a2a2a] border border-gray-700 rounded p-3 text-white focus:border-red-600 outline-none" 
-                        />
-
-                        {/* Availability Section */}
+                        {/* Availability Status */}
                         <div className="space-y-4 p-4 bg-[#2a2a2a] rounded border border-gray-700">
                             <h4 className="text-sm font-bold text-white uppercase tracking-wider">Availability Status</h4>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -301,7 +245,7 @@ export const INITIAL_PROJECTS: Project[] = ${JSON.stringify(editingProjects, nul
                                 </div>
                                 
                                 {editingProfile.availability?.status === 'date' && (
-                                    <div className="animate-in fade-in duration-300">
+                                    <div>
                                         <label className="block text-sm font-medium text-gray-400 mb-1">Select Date</label>
                                         <input 
                                             type="date"
@@ -314,28 +258,17 @@ export const INITIAL_PROJECTS: Project[] = ${JSON.stringify(editingProjects, nul
                             </div>
                         </div>
 
-                        <label className="block text-sm font-medium text-gray-400">Bio</label>
-                        <textarea 
-                            value={editingProfile.bio}
-                            onChange={(e) => handleProfileChange('bio', e.target.value)}
-                            rows={4}
-                            className="w-full bg-[#2a2a2a] border border-gray-700 rounded p-3 text-white focus:border-red-600 outline-none" 
-                        />
-                        
                         {/* Resume Section */}
                         <div className="space-y-2">
                              <div className="flex items-center justify-between">
-                                <label className="block text-sm font-medium text-gray-400">Resume / CV</label>
-                                <div className="text-[10px] text-yellow-500 flex items-center gap-1">
-                                    <AlertTriangle size={12} />
-                                    <span>Tip: Use URL for large files</span>
-                                </div>
+                                <label className="block text-sm font-medium text-gray-400">Resume / CV (Google Drive Link or Upload)</label>
+                                <Link size={14} className="text-gray-500" />
                              </div>
                              <div className="flex gap-2">
                                 <input 
                                     value={editingProfile.resumeUrl || ''}
                                     onChange={(e) => handleProfileChange('resumeUrl', e.target.value)}
-                                    placeholder="Enter PDF URL (e.g. /resume.pdf)"
+                                    placeholder="Paste Google Drive Link or enter local path"
                                     className="flex-1 bg-[#2a2a2a] border border-gray-700 rounded p-3 text-white focus:border-red-600 outline-none" 
                                 />
                                 <label className="cursor-pointer bg-[#333] hover:bg-[#444] text-white px-4 rounded border border-gray-600 flex items-center justify-center transition" title="Upload PDF">
@@ -348,261 +281,87 @@ export const INITIAL_PROJECTS: Project[] = ${JSON.stringify(editingProjects, nul
                                     />
                                 </label>
                              </div>
-                             <p className="text-xs text-gray-500">
-                                Best Practice: Place <code>resume.pdf</code> in your <code>public</code> folder and enter <code>/resume.pdf</code> above.
+                             <p className="text-xs text-gray-500 italic">
+                                Tip: You can paste a public Google Drive share link here.
                              </p>
                         </div>
 
-                        {/* Hero Video Section (New) */}
-                        <div className="space-y-2">
-                             <label className="block text-sm font-medium text-gray-400">Hero Video URL (Main Showreel)</label>
+                        <label className="block text-sm font-medium text-gray-400">Bio</label>
+                        <textarea 
+                            value={editingProfile.bio}
+                            onChange={(e) => handleProfileChange('bio', e.target.value)}
+                            rows={4}
+                            className="w-full bg-[#2a2a2a] border border-gray-700 rounded p-3 text-white focus:border-red-600 outline-none" 
+                        />
+
+                        <label className="block text-sm font-medium text-gray-400">Hero Image URL</label>
+                        <div className="flex gap-2">
                              <input 
-                                value={editingProfile.heroVideo || ''}
-                                onChange={(e) => handleProfileChange('heroVideo', e.target.value)}
-                                placeholder="Enter YouTube or MP4 URL"
-                                className="w-full bg-[#2a2a2a] border border-gray-700 rounded p-3 text-white focus:border-red-600 outline-none" 
-                             />
-                             <p className="text-xs text-gray-500">This video plays when the main "Play" button is clicked.</p>
-                        </div>
-
-                        {/* Hero Image Section */}
-                        <div className="space-y-2">
-                             <label className="block text-sm font-medium text-gray-400">Hero Image (Background)</label>
-                             <div className="flex gap-2">
-                                <input 
-                                    value={editingProfile.heroImage}
-                                    onChange={(e) => handleProfileChange('heroImage', e.target.value)}
-                                    placeholder="Enter Image URL"
-                                    className="flex-1 bg-[#2a2a2a] border border-gray-700 rounded p-3 text-white focus:border-red-600 outline-none" 
-                                />
-                                <label className="cursor-pointer bg-[#333] hover:bg-[#444] text-white px-4 rounded border border-gray-600 flex items-center justify-center transition" title="Upload Local Image">
-                                    <Upload size={18} />
-                                    <input 
-                                        type="file" 
-                                        accept="image/*" 
-                                        className="hidden" 
-                                        onChange={(e) => handleFileUpload(e, 'heroImage')}
-                                    />
-                                </label>
-                             </div>
-                             <p className="text-xs text-gray-500">Supported: URL or Local File Upload (stored locally)</p>
-                             <img src={editingProfile.heroImage} alt="Preview" className="w-full h-48 object-cover rounded border border-gray-700 opacity-80" />
-                        </div>
-
-                        {/* Avatar Section */}
-                        <div className="space-y-2">
-                            <label className="block text-sm font-medium text-gray-400">Avatar URL</label>
-                             <div className="flex gap-2">
-                                <input 
-                                    value={editingProfile.avatar}
-                                    onChange={(e) => handleProfileChange('avatar', e.target.value)}
-                                    placeholder="Enter Image URL"
-                                    className="flex-1 bg-[#2a2a2a] border border-gray-700 rounded p-3 text-white focus:border-red-600 outline-none" 
-                                />
-                                <label className="cursor-pointer bg-[#333] hover:bg-[#444] text-white px-4 rounded border border-gray-600 flex items-center justify-center transition" title="Upload Local Image">
-                                    <Upload size={18} />
-                                    <input 
-                                        type="file" 
-                                        accept="image/*" 
-                                        className="hidden" 
-                                        onChange={(e) => handleFileUpload(e, 'avatar')}
-                                    />
-                                </label>
-                             </div>
+                                value={editingProfile.heroImage}
+                                onChange={(e) => handleProfileChange('heroImage', e.target.value)}
+                                className="flex-1 bg-[#2a2a2a] border border-gray-700 rounded p-3 text-white focus:border-red-600 outline-none" 
+                            />
+                            <label className="cursor-pointer bg-[#333] hover:bg-[#444] text-white px-4 rounded border border-gray-600 flex items-center justify-center transition">
+                                <Upload size={18} />
+                                <input type="file" accept="image/*" className="hidden" onChange={(e) => handleFileUpload(e, 'heroImage')}/>
+                            </label>
                         </div>
                     </div>
                 </div>
             ) : (
                 <div className="space-y-8">
                     {/* Add/Edit Project Form */}
-                    <div className="bg-[#2a2a2a] p-6 rounded-lg border border-gray-700 project-form transition-all">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-lg font-bold flex items-center gap-2">
-                                {isEditingId ? <Edit2 className="text-red-600"/> : <Plus className="text-red-600"/>} 
-                                {isEditingId ? 'Edit Project' : 'Add New Project'}
-                            </h3>
-                            {isEditingId && (
-                                <button onClick={resetForm} className="text-xs text-gray-400 hover:text-white underline">Cancel Edit</button>
-                            )}
-                        </div>
+                    <div className="bg-[#2a2a2a] p-6 rounded-lg border border-gray-700 project-form">
+                        <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                            {isEditingId ? <Edit2 className="text-red-600"/> : <Plus className="text-red-600"/>} 
+                            {isEditingId ? 'Edit Project' : 'Add New Project'}
+                        </h3>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {/* Basic Info */}
                             <div className="space-y-4">
-                                <h4 className="text-xs uppercase text-gray-500 font-bold border-b border-gray-700 pb-1">Basic Info</h4>
-                                <input 
-                                    placeholder="Project Title *"
-                                    value={currentProject.title}
-                                    onChange={(e) => setCurrentProject({...currentProject, title: e.target.value})}
-                                    className="w-full bg-[#141414] border border-gray-600 rounded p-2 text-white"
-                                />
+                                <input placeholder="Title *" value={currentProject.title} onChange={(e) => setCurrentProject({...currentProject, title: e.target.value})} className="w-full bg-[#141414] border border-gray-600 rounded p-2 text-white" />
                                 <div className="grid grid-cols-2 gap-2">
-                                    <select 
-                                        value={currentProject.category}
-                                        onChange={(e) => setCurrentProject({...currentProject, category: e.target.value})}
-                                        className="bg-[#141414] border border-gray-600 rounded p-2 text-white"
-                                    >
+                                    <select value={currentProject.category} onChange={(e) => setCurrentProject({...currentProject, category: e.target.value})} className="bg-[#141414] border border-gray-600 rounded p-2 text-white">
                                         {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                                     </select>
-                                    <input 
-                                        placeholder="Year"
-                                        type="number"
-                                        value={currentProject.year}
-                                        onChange={(e) => setCurrentProject({...currentProject, year: parseInt(e.target.value)})}
-                                        className="bg-[#141414] border border-gray-600 rounded p-2 text-white"
-                                    />
+                                    <input placeholder="Year" type="number" value={currentProject.year} onChange={(e) => setCurrentProject({...currentProject, year: parseInt(e.target.value)})} className="bg-[#141414] border border-gray-600 rounded p-2 text-white" />
                                 </div>
-                                <input 
-                                    placeholder="Role (e.g. Lead Designer)"
-                                    value={currentProject.role}
-                                    onChange={(e) => setCurrentProject({...currentProject, role: e.target.value})}
-                                    className="w-full bg-[#141414] border border-gray-600 rounded p-2 text-white"
-                                />
-                                <input 
-                                    placeholder="Platform (e.g. iOS, Web)"
-                                    value={currentProject.platform}
-                                    onChange={(e) => setCurrentProject({...currentProject, platform: e.target.value})}
-                                    className="w-full bg-[#141414] border border-gray-600 rounded p-2 text-white"
-                                />
-                                
-                                {/* Project Image Upload */}
-                                <div className="flex gap-2">
-                                    <input 
-                                        placeholder="Cover Image URL *"
-                                        value={currentProject.imageUrl}
-                                        onChange={(e) => setCurrentProject({...currentProject, imageUrl: e.target.value})}
-                                        className="flex-1 bg-[#141414] border border-gray-600 rounded p-2 text-white"
-                                    />
-                                    <label className="cursor-pointer bg-[#333] hover:bg-[#444] text-white px-3 rounded border border-gray-600 flex items-center justify-center" title="Upload Image">
-                                        <Upload size={16} />
-                                        <input 
-                                            type="file" 
-                                            accept="image/*" 
-                                            className="hidden" 
-                                            onChange={(e) => {
-                                                const file = e.target.files?.[0];
-                                                if(file){
-                                                    const reader = new FileReader();
-                                                    reader.onloadend = () => setCurrentProject({...currentProject, imageUrl: reader.result as string});
-                                                    reader.readAsDataURL(file);
-                                                }
-                                            }}
-                                        />
-                                    </label>
-                                </div>
-
-                                <input 
-                                    placeholder="Hero Video URL (Optional)"
-                                    value={currentProject.heroVideo}
-                                    onChange={(e) => setCurrentProject({...currentProject, heroVideo: e.target.value})}
-                                    className="w-full bg-[#141414] border border-gray-600 rounded p-2 text-white"
-                                />
-                                 <textarea 
-                                    placeholder="Short Description (Card View)"
-                                    value={currentProject.description}
-                                    onChange={(e) => setCurrentProject({...currentProject, description: e.target.value})}
-                                    className="w-full bg-[#141414] border border-gray-600 rounded p-2 text-white h-24"
-                                />
+                                <input placeholder="Cover Image URL *" value={currentProject.imageUrl} onChange={(e) => setCurrentProject({...currentProject, imageUrl: e.target.value})} className="w-full bg-[#141414] border border-gray-600 rounded p-2 text-white" />
+                                <textarea placeholder="Short Description" value={currentProject.description} onChange={(e) => setCurrentProject({...currentProject, description: e.target.value})} className="w-full bg-[#141414] border border-gray-600 rounded p-2 text-white h-24" />
                             </div>
 
-                            {/* Detailed Info */}
                             <div className="space-y-4">
-                                <h4 className="text-xs uppercase text-gray-500 font-bold border-b border-gray-700 pb-1">Detailed Content</h4>
-                                
-                                <div className="flex items-center gap-2 mb-4 p-3 bg-black/20 rounded border border-gray-700">
-                                     <input 
-                                        type="checkbox" 
-                                        id="hasCaseStudy"
-                                        checked={hasContent}
-                                        onChange={(e) => setCurrentProject({...currentProject, isRestricted: !e.target.checked})}
-                                        className="w-5 h-5 accent-red-600 cursor-pointer"
-                                     />
-                                     <label htmlFor="hasCaseStudy" className="text-sm text-white select-none font-bold cursor-pointer">
-                                        Include Case Study Content?
-                                     </label>
-                                     <span className="text-xs text-gray-500 ml-auto">
-                                        {hasContent ? "Viewable" : "Restricted Access"}
-                                     </span>
+                                <div className="flex items-center gap-2 mb-2 p-3 bg-black/20 rounded border border-gray-700">
+                                     <input type="checkbox" id="hasCaseStudy" checked={hasContent} onChange={(e) => setCurrentProject({...currentProject, isRestricted: !e.target.checked})} className="w-5 h-5 accent-red-600" />
+                                     <label htmlFor="hasCaseStudy" className="text-sm text-white font-bold cursor-pointer">Include Case Study Content?</label>
                                 </div>
-
-                                {hasContent ? (
-                                    <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                                        <input 
-                                            placeholder="External Link (Optional)"
-                                            value={currentProject.link}
-                                            onChange={(e) => setCurrentProject({...currentProject, link: e.target.value})}
-                                            className="w-full bg-[#141414] border border-gray-600 rounded p-2 text-white"
-                                        />
-                                        
-                                        <textarea 
-                                            placeholder="Full Case Study Description (HTML supported)"
-                                            value={currentProject.fullDescription}
-                                            onChange={(e) => setCurrentProject({...currentProject, fullDescription: e.target.value})}
-                                            className="w-full bg-[#141414] border border-gray-600 rounded p-2 text-white h-32 font-mono text-sm"
-                                        />
-                                        
-                                        <div className="space-y-2">
-                                            <label className="block text-sm font-medium text-gray-400">Gallery Images</label>
-                                            <div className="flex gap-2">
-                                                <textarea 
-                                                    placeholder="Gallery Image URLs (One per line)"
-                                                    value={galleryText}
-                                                    onChange={(e) => setGalleryText(e.target.value)}
-                                                    className="flex-1 bg-[#141414] border border-gray-600 rounded p-2 text-white h-24 font-mono text-sm"
-                                                />
-                                                <label className="cursor-pointer bg-[#333] hover:bg-[#444] text-white px-3 py-2 rounded border border-gray-600 flex flex-col items-center justify-center w-24 transition" title="Upload Images">
-                                                    <Upload size={20} className="mb-1" />
-                                                    <span className="text-[10px] text-center leading-tight">Add Images</span>
-                                                    <input 
-                                                        type="file" 
-                                                        accept="image/*" 
-                                                        multiple
-                                                        className="hidden" 
-                                                        onChange={handleGalleryUpload}
-                                                    />
-                                                </label>
-                                            </div>
-                                            <p className="text-xs text-gray-500">Supports URLs or Local File Uploads (Multiple)</p>
-                                        </div>
-                                        
-                                        <input 
-                                            placeholder="Main Tag (e.g. Featured)"
-                                            value={currentProject.mainTag}
-                                            onChange={(e) => setCurrentProject({...currentProject, mainTag: e.target.value})}
-                                            className="w-full bg-[#141414] border border-gray-600 rounded p-2 text-white"
-                                        />
-                                    </div>
-                                ) : (
-                                    <div className="p-4 bg-yellow-900/10 border border-yellow-700/30 rounded text-yellow-500 text-sm">
-                                        Users who click "View Case Study" will see the restricted access screen prompting them to contact you.
+                                {hasContent && (
+                                    <div className="space-y-4">
+                                        <textarea placeholder="Full Description (HTML)" value={currentProject.fullDescription} onChange={(e) => setCurrentProject({...currentProject, fullDescription: e.target.value})} className="w-full bg-[#141414] border border-gray-600 rounded p-2 text-white h-32 font-mono text-sm" />
+                                        <textarea placeholder="Gallery URLs (One per line)" value={galleryText} onChange={(e) => setGalleryText(e.target.value)} className="w-full bg-[#141414] border border-gray-600 rounded p-2 text-white h-24 font-mono text-sm" />
                                     </div>
                                 )}
                             </div>
                         </div>
-                        <button onClick={saveProject} className="mt-6 w-full md:w-auto bg-white text-black font-bold px-8 py-3 rounded hover:bg-gray-200 transition">
+                        <button onClick={saveProject} className="mt-6 bg-white text-black font-bold px-8 py-3 rounded hover:bg-gray-200 transition">
                             {isEditingId ? 'Update Project' : 'Add Project'}
                         </button>
                     </div>
 
-                    {/* List Existing */}
-                    <div className="space-y-2 pb-10">
-                        <h3 className="text-lg font-bold">Manage Existing Projects</h3>
+                    {/* Project List */}
+                    <div className="space-y-2">
                         {editingProjects.map(p => (
-                            <div key={p.id} className={`flex items-center justify-between bg-[#141414] p-3 rounded border transition ${isEditingId === p.id ? 'border-red-600 bg-red-900/10' : 'border-gray-800'}`}>
+                            <div key={p.id} className="flex items-center justify-between bg-[#141414] p-3 rounded border border-gray-800">
                                 <div className="flex items-center gap-4">
                                     <img src={p.imageUrl} className="w-16 h-9 object-cover rounded" />
                                     <div>
                                         <div className="font-bold">{p.title}</div>
-                                        <div className="text-xs text-gray-500">{p.role} • {p.year} {p.isRestricted && <span className="text-yellow-500 font-bold ml-2">(Restricted)</span>}</div>
+                                        <div className="text-xs text-gray-500">{p.year} {p.isRestricted && '(Restricted)'}</div>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <button onClick={() => editProject(p)} className="p-2 text-gray-300 hover:bg-white/10 rounded" title="Edit">
-                                        <Edit2 size={18}/>
-                                    </button>
-                                    <button onClick={() => deleteProject(p.id)} className="p-2 text-red-500 hover:bg-red-500/10 rounded" title="Delete">
-                                        <Trash2 size={18}/>
-                                    </button>
+                                <div className="flex gap-2">
+                                    <button onClick={() => editProject(p)} className="p-2 text-gray-300 hover:bg-white/10 rounded"><Edit2 size={18}/></button>
+                                    <button onClick={() => deleteProject(p.id)} className="p-2 text-red-500 hover:bg-red-500/10 rounded"><Trash2 size={18}/></button>
                                 </div>
                             </div>
                         ))}
@@ -615,8 +374,7 @@ export const INITIAL_PROJECTS: Project[] = ${JSON.stringify(editingProjects, nul
         <div className="p-6 border-t border-gray-700 bg-[#141414] flex justify-end gap-4">
              <button onClick={onClose} className="px-6 py-2 rounded border border-gray-600 hover:bg-gray-800 transition">Cancel</button>
              <button onClick={exportConfig} className="px-6 py-2 rounded border border-blue-600 text-blue-500 hover:bg-blue-900/20 font-bold transition flex items-center gap-2">
-                {new Blob([JSON.stringify(editingProjects)]).size > 1000000 ? <FileDown size={18} /> : <Code size={18} />} 
-                {new Blob([JSON.stringify(editingProjects)]).size > 1000000 ? "Download Config" : "Export Code"}
+                <Code size={18} /> Export Code
              </button>
              <button onClick={saveAll} className="px-6 py-2 rounded bg-red-600 hover:bg-red-700 font-bold transition flex items-center gap-2">
                 <Save size={18} /> Save & Close

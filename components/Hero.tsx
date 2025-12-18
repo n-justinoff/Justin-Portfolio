@@ -1,5 +1,5 @@
 import React from 'react';
-import { Play, Calendar, Download } from 'lucide-react';
+import { Play, Calendar, Download, ExternalLink } from 'lucide-react';
 import { UserProfile } from '../types';
 
 interface HeroProps {
@@ -51,75 +51,83 @@ const Hero: React.FC<HeroProps> = ({ profile, onPlay }) => {
   const { text, color, iconColor, badgeBorder } = getAvailabilityInfo();
 
   /**
-   * ROBUST DOWNLOAD HANDLER
-   * This function prevents the ".pdf.html" issue on mobile by verifying
-   * that we are actually downloading a PDF and not the site's index.html 
-   * (which happens when a file is missing on Vercel/Netlify due to rewrites).
+   * ROBUST DOWNLOAD & LINK HANDLER
+   * Handles: 
+   * 1. Data URLs (Base64 uploads)
+   * 2. External Links (Google Drive, etc.)
+   * 3. Local Files (preventing the .pdf.html issue)
    */
   const handleDownloadClick = async (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
-    const url = profile.resumeUrl || "/Nirmal_Justin_Resume.pdf";
+    const url = (profile.resumeUrl || "/Nirmal_Justin_Resume.pdf").trim();
     const filename = "Resume.pdf";
 
-    try {
-      // CASE 1: Data URL (Base64) - Usually from the Admin Panel upload
-      if (url.startsWith('data:')) {
-        const parts = url.split(',');
-        const mime = parts[0].match(/:(.*?);/)?.[1] || 'application/pdf';
-        const bstr = atob(parts[1]);
-        let n = bstr.length;
-        const u8arr = new Uint8Array(n);
-        while (n--) {
-          u8arr[n] = bstr.charCodeAt(n);
-        }
-        // Force the blob to be 'application/pdf'
-        const blob = new Blob([u8arr], { type: 'application/pdf' });
-        triggerDownload(blob, filename);
-        return;
-      }
+    // Detect if it's an external link (Google Drive, Dropbox, Web link, etc.)
+    const isExternal = url.includes('drive.google.com') || 
+                       url.includes('docs.google.com') || 
+                       url.includes('dropbox.com') || 
+                       (url.startsWith('http') && !url.includes(window.location.hostname));
 
-      // CASE 2: External/Local Path - Requires fetching and validation
+    // CASE 1: External Links
+    if (isExternal) {
+        window.open(url, '_blank');
+        return;
+    }
+
+    // CASE 2: Data URL (Base64)
+    if (url.startsWith('data:')) {
+        try {
+            const parts = url.split(',');
+            const mime = parts[0].match(/:(.*?);/)?.[1] || 'application/pdf';
+            const bstr = atob(parts[1]);
+            let n = bstr.length;
+            const u8arr = new Uint8Array(n);
+            while (n--) {
+                u8arr[n] = bstr.charCodeAt(n);
+            }
+            const blob = new Blob([u8arr], { type: 'application/pdf' });
+            triggerDownload(blob, filename);
+        } catch (err) {
+            console.error("Data URL download failed", err);
+            window.open(url, '_blank');
+        }
+        return;
+    }
+
+    // CASE 3: Local/Same-Domain File Path
+    try {
       const response = await fetch(url);
-      
-      // Validation: Check if the response is actually a PDF
       const contentType = response.headers.get('content-type');
       
-      // If the server returned HTML, it means the PDF file is missing and the SPA 
-      // routing served index.html instead. This is why it downloads as .pdf.html
+      // If we got HTML, it's a server fallback (404 redirect). 
+      // Do not attempt to download as PDF.
       if (!response.ok || (contentType && contentType.includes('text/html'))) {
-        alert("Resume file not found on the server. Please ensure you have uploaded it in the Portfolio Manager.");
+        alert("Resume file not found. Please upload your PDF or paste a Google Drive link in the Portfolio Manager.");
         return;
       }
 
       const blob = await response.blob();
-      // Ensure the downloaded file is treated as a PDF by the browser
       const pdfBlob = new Blob([blob], { type: 'application/pdf' });
       triggerDownload(pdfBlob, filename);
 
     } catch (error) {
-      console.error("Download failed:", error);
-      // Fallback: Try standard link behavior as last resort
+      console.error("Local fetch failed, likely CORS or missing file", error);
       window.open(url, '_blank');
     }
   };
 
-  /**
-   * Internal helper to trigger the actual browser download
-   */
   const triggerDownload = (blob: Blob, name: string) => {
     const blobUrl = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = blobUrl;
     link.setAttribute('download', name);
-    
-    // Required for some mobile browsers to detect the click
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
-    // Clean up memory
     setTimeout(() => window.URL.revokeObjectURL(blobUrl), 200);
   };
+
+  const isExternalUrl = profile.resumeUrl?.includes('drive.google.com') || profile.resumeUrl?.includes('docs.google.com');
 
   return (
     <div className="relative h-auto aspect-[3/4] md:aspect-auto md:h-[80vh] w-full rounded-2xl md:rounded-[2rem] overflow-hidden shadow-2xl group ring-1 ring-white/10 bg-[#141414]">
@@ -134,7 +142,7 @@ const Hero: React.FC<HeroProps> = ({ profile, onPlay }) => {
         <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent via-50% to-[#141414] to-95%" />
         <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-black/20 to-transparent" />
         
-        {/* Mobile bottom gradient for text readability - Stronger for the card look */}
+        {/* Mobile bottom gradient for text readability */}
         <div className="md:hidden absolute bottom-0 left-0 w-full h-2/3 bg-gradient-to-t from-[#141414] via-[#141414]/70 to-transparent" />
       </div>
 
@@ -150,10 +158,10 @@ const Hero: React.FC<HeroProps> = ({ profile, onPlay }) => {
       {/* Content Container */}
       <div className="absolute bottom-0 left-0 w-full z-10 flex flex-col justify-end pb-4 md:block md:bottom-[12%] md:left-12 md:pb-0">
         
-        {/* Inner Wrapper: Centered on Mobile, Left-Aligned on Desktop */}
+        {/* Inner Wrapper */}
         <div className="flex flex-col items-center text-center px-4 w-full md:items-start md:text-left md:max-w-2xl md:px-0 space-y-3 md:space-y-6">
 
-            {/* N Logo + Name */}
+            {/* Logo + Name */}
             <div className="flex items-center space-x-1 mb-1 opacity-90 md:opacity-100 scale-90 md:scale-100">
                  <span className="text-[#E50914] text-3xl md:text-4xl font-black tracking-tighter drop-shadow-lg">N</span>
                  <span className="text-gray-200 font-bold tracking-[0.2em] text-[10px] md:text-xs mt-1 uppercase drop-shadow-md">IRMAL JUSTIN</span>
@@ -175,7 +183,7 @@ const Hero: React.FC<HeroProps> = ({ profile, onPlay }) => {
                  <span>UI/UX</span>
             </div>
 
-            {/* Buttons - Side by side row on Mobile, Row on Desktop */}
+            {/* Buttons */}
             <div className="flex flex-row items-center w-full gap-3 pt-2 md:w-auto md:gap-4 md:pt-4">
               <button 
                 onClick={onPlay}
@@ -187,23 +195,24 @@ const Hero: React.FC<HeroProps> = ({ profile, onPlay }) => {
               
               <a 
                 href={profile.resumeUrl || "/Nirmal_Justin_Resume.pdf"} 
-                download="Resume.pdf"
                 onClick={handleDownloadClick}
                 className="flex-1 md:flex-none flex items-center justify-center space-x-2 bg-[#2f2f2f] md:bg-[rgba(109,109,110,0.7)] text-white px-4 md:px-8 py-2.5 md:py-3 rounded-[4px] font-bold hover:bg-[#404040] md:hover:bg-[rgba(109,109,110,0.5)] transition backdrop-blur-md shadow-lg h-10 md:h-auto"
               >
-                <Download className="w-5 h-5 md:w-6 md:h-6" />
-                <span className="text-sm md:text-lg whitespace-nowrap">Download Resume</span>
+                {isExternalUrl ? <ExternalLink className="w-5 h-5 md:w-6 md:h-6" /> : <Download className="w-5 h-5 md:w-6 md:h-6" />}
+                <span className="text-sm md:text-lg whitespace-nowrap">
+                    {isExternalUrl ? 'View Resume' : 'Download Resume'}
+                </span>
               </a>
             </div>
 
-             {/* Description - Visible on Mobile */}
+             {/* Description */}
              <p className="block text-gray-300 text-xs md:text-xl font-medium max-w-lg drop-shadow-md opacity-80 md:opacity-100">
                 {profile.tagline || "I love watching movies, so why not a portfolio like that?"}
             </p>
         </div>
       </div>
       
-      {/* Desktop Bottom Right Badge (Absolute) */}
+      {/* Desktop Availability Badge */}
       <div className={`hidden md:flex absolute bottom-[12%] right-0 bg-[#181818]/60 backdrop-blur-md border-l-4 ${badgeBorder} py-2 px-5 items-center space-x-3 rounded-l-md shadow-2xl z-20`}>
           <Calendar className={`${iconColor} w-5 h-5`} />
           <div className="flex flex-col">
