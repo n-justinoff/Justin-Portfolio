@@ -50,74 +50,40 @@ const Hero: React.FC<HeroProps> = ({ profile, onPlay }) => {
 
   const { text, color, iconColor, badgeBorder } = getAvailabilityInfo();
 
-  /**
-   * ULTRA-ROBUST DOWNLOAD HANDLER
-   * Specifically handles the mobile Safari ".pdf.html" issue caused by Vercel's SPA rewrites.
-   */
+  // Robust download handler for mobile and desktop
   const handleDownloadClick = async (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
     const url = profile.resumeUrl || "/Nirmal_Justin_Resume.pdf";
-    const filename = "Resume.pdf";
-
-    // 1. DATA URL HANDLING (Sync path for better mobile compatibility)
-    if (url.startsWith('data:')) {
-      try {
-        const parts = url.split(',');
-        const mime = parts[0].match(/:(.*?);/)?.[1] || 'application/pdf';
-        const bstr = atob(parts[1]);
-        let n = bstr.length;
-        const u8arr = new Uint8Array(n);
-        while (n--) {
-          u8arr[n] = bstr.charCodeAt(n);
-        }
-        const blob = new Blob([u8arr], { type: 'application/pdf' }); // Force PDF mime
-        const blobUrl = window.URL.createObjectURL(blob);
-        
+    
+    try {
+      // If the URL is a base64 data URL (uploaded via Admin Panel)
+      if (url.startsWith('data:')) {
         const link = document.createElement('a');
-        link.href = blobUrl;
-        link.download = filename;
+        link.href = url;
+        link.download = "Resume.pdf";
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        
-        setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
         return;
-      } catch (err) {
-        console.error("Data URL processing failed", err);
       }
-    }
 
-    // 2. REMOTE URL HANDLING (Validation path)
-    try {
+      // For standard URLs, we fetch and create a blob to force the filename on mobile
       const response = await fetch(url);
-      
-      // If the file is missing (404) or server error, Vercel/SPA servers usually return index.html
-      // with a 200 status, or a 404 page that is actually HTML.
-      const contentType = response.headers.get('content-type');
-      
-      // If we received HTML instead of a PDF, it's the SPA fallback. DO NOT DOWNLOAD.
-      if (!response.ok || (contentType && contentType.includes('text/html'))) {
-        alert("The Resume file was not found on the server. \n\nIf you haven't uploaded your resume yet, please do so in the 'My Portfolio' (Admin) section.");
-        // Optional: window.open(url, '_blank'); // This would just open the website again in a new tab
-        return;
-      }
-
-      const originalBlob = await response.blob();
-      // Explicitly construct a new Blob with the correct MIME type to override any headers
-      const pdfBlob = new Blob([originalBlob], { type: 'application/pdf' });
-      const blobUrl = window.URL.createObjectURL(pdfBlob);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
       
       const link = document.createElement('a');
       link.href = blobUrl;
-      link.download = filename;
+      link.download = "Resume.pdf";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       
+      // Cleanup the blob URL after a short delay
       setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
     } catch (error) {
-      console.error("Fetch download failed", error);
-      // Fallback for browsers with strict cross-origin fetch policies
+      console.error("Download failed, falling back to direct navigation", error);
+      // Fallback: Just open the URL in a new window/tab
       window.open(url, '_blank');
     }
   };
