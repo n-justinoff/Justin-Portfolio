@@ -39,5 +39,6 @@ export interface UserProfile {
 
 export const CATEGORIES = [
   "Featured Projects",
-  "Concept Designs"
+  "Concept Designs",
+  "Skill Sprinkles"
 ];

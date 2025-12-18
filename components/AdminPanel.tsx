@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Project, UserProfile, CATEGORIES } from '../types';
-import { X, Save, Trash2, Plus, Edit2, ChevronDown, ChevronUp, Upload, Code, FileDown, AlertTriangle, Link } from 'lucide-react';
+import { X, Save, Trash2, Plus, Edit2, ChevronDown, ChevronUp, Upload, Code, Link } from 'lucide-react';
 
 interface AdminPanelProps {
   isOpen: boolean;
@@ -71,29 +71,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, profile, proje
     }
   };
 
-  const handleGalleryUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files && files.length > 0) {
-        const promises = Array.from(files).map(file => {
-            return new Promise<string>((resolve) => {
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                    resolve(reader.result as string);
-                };
-                reader.readAsDataURL(file as Blob);
-            });
-        });
-
-        Promise.all(promises).then(base64Images => {
-             setGalleryText(prev => {
-                const current = prev.trim();
-                const newContent = base64Images.join('\n');
-                return current ? `${current}\n${newContent}` : newContent;
-             });
-        });
-    }
-  };
-
   const saveAll = () => {
     try {
         onUpdateProfile(editingProfile);
@@ -145,6 +122,38 @@ export const INITIAL_PROJECTS: Project[] = ${JSON.stringify(editingProjects, nul
       setGalleryText("");
   };
 
+  const moveProject = (id: string, direction: 'up' | 'down') => {
+    const index = editingProjects.findIndex(p => p.id === id);
+    if (index === -1) return;
+
+    const currentProject = editingProjects[index];
+    const category = currentProject.category;
+
+    // Find the neighbor in the same category
+    let neighborIndex = -1;
+    if (direction === 'up') {
+        for (let i = index - 1; i >= 0; i--) {
+            if (editingProjects[i].category === category) {
+                neighborIndex = i;
+                break;
+            }
+        }
+    } else {
+        for (let i = index + 1; i < editingProjects.length; i++) {
+            if (editingProjects[i].category === category) {
+                neighborIndex = i;
+                break;
+            }
+        }
+    }
+
+    if (neighborIndex !== -1) {
+        const newProjects = [...editingProjects];
+        [newProjects[index], newProjects[neighborIndex]] = [newProjects[neighborIndex], newProjects[index]];
+        setEditingProjects(newProjects);
+    }
+  };
+
   const saveProject = () => {
     if(!currentProject.title || !currentProject.imageUrl) {
         alert("Title and Image URL are required");
@@ -160,7 +169,7 @@ export const INITIAL_PROJECTS: Project[] = ${JSON.stringify(editingProjects, nul
         imageUrl: currentProject.imageUrl!,
         heroVideo: currentProject.heroVideo,
         category: currentProject.category || CATEGORIES[0],
-        tags: currentProject.tags || ["New"],
+        tags: (currentProject.tags && currentProject.tags.length > 0) ? currentProject.tags : ["New"],
         year: currentProject.year || 2024,
         role: currentProject.role,
         platform: currentProject.platform,
@@ -189,7 +198,7 @@ export const INITIAL_PROJECTS: Project[] = ${JSON.stringify(editingProjects, nul
         {/* Header */}
         <div className="flex justify-between items-center p-6 border-b border-gray-700 bg-[#141414]">
           <h2 className="text-2xl font-bold text-white">Portfolio Manager</h2>
-          <button onClick={onClose} className="p-2 hover:bg-gray-800 rounded-full"><X /></button>
+          <button onClick={onClose} className="p-2 hover:bg-gray-800 rounded-full text-gray-400 hover:text-white"><X /></button>
         </div>
 
         {/* Tabs */}
@@ -209,7 +218,7 @@ export const INITIAL_PROJECTS: Project[] = ${JSON.stringify(editingProjects, nul
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-8">
+        <div className="flex-1 overflow-y-auto p-6 space-y-8 no-scrollbar">
             {activeTab === 'profile' ? (
                 <div className="space-y-6 max-w-2xl mx-auto">
                     <div className="grid grid-cols-1 gap-4">
@@ -281,9 +290,6 @@ export const INITIAL_PROJECTS: Project[] = ${JSON.stringify(editingProjects, nul
                                     />
                                 </label>
                              </div>
-                             <p className="text-xs text-gray-500 italic">
-                                Tip: You can paste a public Google Drive share link here.
-                             </p>
                         </div>
 
                         <label className="block text-sm font-medium text-gray-400">Bio</label>
@@ -309,62 +315,136 @@ export const INITIAL_PROJECTS: Project[] = ${JSON.stringify(editingProjects, nul
                     </div>
                 </div>
             ) : (
-                <div className="space-y-8">
+                <div className="space-y-12">
                     {/* Add/Edit Project Form */}
-                    <div className="bg-[#2a2a2a] p-6 rounded-lg border border-gray-700 project-form">
+                    <div className="bg-[#2a2a2a] p-6 rounded-lg border border-gray-700 project-form shadow-inner">
                         <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                            {isEditingId ? <Edit2 className="text-red-600"/> : <Plus className="text-red-600"/>} 
+                            {isEditingId ? <Edit2 className="text-red-600" size={20}/> : <Plus className="text-red-600" size={20}/>} 
                             {isEditingId ? 'Edit Project' : 'Add New Project'}
                         </h3>
                         
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-4">
-                                <input placeholder="Title *" value={currentProject.title} onChange={(e) => setCurrentProject({...currentProject, title: e.target.value})} className="w-full bg-[#141414] border border-gray-600 rounded p-2 text-white" />
-                                <div className="grid grid-cols-2 gap-2">
-                                    <select value={currentProject.category} onChange={(e) => setCurrentProject({...currentProject, category: e.target.value})} className="bg-[#141414] border border-gray-600 rounded p-2 text-white">
-                                        {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                                    </select>
-                                    <input placeholder="Year" type="number" value={currentProject.year} onChange={(e) => setCurrentProject({...currentProject, year: parseInt(e.target.value)})} className="bg-[#141414] border border-gray-600 rounded p-2 text-white" />
+                                <div>
+                                    <label className="block text-[10px] uppercase font-bold text-gray-500 mb-1">Title *</label>
+                                    <input placeholder="Project Name" value={currentProject.title} onChange={(e) => setCurrentProject({...currentProject, title: e.target.value})} className="w-full bg-[#141414] border border-gray-600 rounded p-2.5 text-white focus:border-red-600 outline-none" />
                                 </div>
-                                <input placeholder="Cover Image URL *" value={currentProject.imageUrl} onChange={(e) => setCurrentProject({...currentProject, imageUrl: e.target.value})} className="w-full bg-[#141414] border border-gray-600 rounded p-2 text-white" />
-                                <textarea placeholder="Short Description" value={currentProject.description} onChange={(e) => setCurrentProject({...currentProject, description: e.target.value})} className="w-full bg-[#141414] border border-gray-600 rounded p-2 text-white h-24" />
+                                
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-[10px] uppercase font-bold text-gray-500 mb-1">Category</label>
+                                        <select value={currentProject.category} onChange={(e) => setCurrentProject({...currentProject, category: e.target.value})} className="w-full bg-[#141414] border border-gray-600 rounded p-2.5 text-white outline-none">
+                                            {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] uppercase font-bold text-gray-500 mb-1">Year</label>
+                                        <input placeholder="2025" type="number" value={currentProject.year} onChange={(e) => setCurrentProject({...currentProject, year: parseInt(e.target.value)})} className="w-full bg-[#141414] border border-gray-600 rounded p-2.5 text-white outline-none" />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-[10px] uppercase font-bold text-gray-500 mb-1">Cover Image URL *</label>
+                                    <input placeholder="https://..." value={currentProject.imageUrl} onChange={(e) => setCurrentProject({...currentProject, imageUrl: e.target.value})} className="w-full bg-[#141414] border border-gray-600 rounded p-2.5 text-white outline-none" />
+                                </div>
+                                
+                                <div>
+                                    <label className="block text-[10px] uppercase font-bold text-gray-500 mb-1">Short Description</label>
+                                    <textarea placeholder="Visible on grid hover..." value={currentProject.description} onChange={(e) => setCurrentProject({...currentProject, description: e.target.value})} className="w-full bg-[#141414] border border-gray-600 rounded p-2.5 text-white h-24 outline-none" />
+                                </div>
                             </div>
 
                             <div className="space-y-4">
-                                <div className="flex items-center gap-2 mb-2 p-3 bg-black/20 rounded border border-gray-700">
+                                <div className="flex items-center gap-2 mb-2 p-3 bg-black/30 rounded border border-gray-700">
                                      <input type="checkbox" id="hasCaseStudy" checked={hasContent} onChange={(e) => setCurrentProject({...currentProject, isRestricted: !e.target.checked})} className="w-5 h-5 accent-red-600" />
                                      <label htmlFor="hasCaseStudy" className="text-sm text-white font-bold cursor-pointer">Include Case Study Content?</label>
                                 </div>
                                 {hasContent && (
                                     <div className="space-y-4">
-                                        <textarea placeholder="Full Description (HTML)" value={currentProject.fullDescription} onChange={(e) => setCurrentProject({...currentProject, fullDescription: e.target.value})} className="w-full bg-[#141414] border border-gray-600 rounded p-2 text-white h-32 font-mono text-sm" />
-                                        <textarea placeholder="Gallery URLs (One per line)" value={galleryText} onChange={(e) => setGalleryText(e.target.value)} className="w-full bg-[#141414] border border-gray-600 rounded p-2 text-white h-24 font-mono text-sm" />
+                                        <div>
+                                            <label className="block text-[10px] uppercase font-bold text-gray-500 mb-1">Full Description (HTML)</label>
+                                            <textarea placeholder="Detailed synopsis with HTML tags..." value={currentProject.fullDescription} onChange={(e) => setCurrentProject({...currentProject, fullDescription: e.target.value})} className="w-full bg-[#141414] border border-gray-600 rounded p-2.5 text-white h-32 font-mono text-sm outline-none" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-[10px] uppercase font-bold text-gray-500 mb-1">Gallery URLs (One per line)</label>
+                                            <textarea placeholder="Image URLs for the gallery..." value={galleryText} onChange={(e) => setGalleryText(e.target.value)} className="w-full bg-[#141414] border border-gray-600 rounded p-2.5 text-white h-24 font-mono text-sm outline-none" />
+                                        </div>
                                     </div>
                                 )}
                             </div>
                         </div>
-                        <button onClick={saveProject} className="mt-6 bg-white text-black font-bold px-8 py-3 rounded hover:bg-gray-200 transition">
-                            {isEditingId ? 'Update Project' : 'Add Project'}
-                        </button>
+                        <div className="flex gap-2 mt-6">
+                            <button onClick={saveProject} className="bg-white text-black font-bold px-8 py-3 rounded hover:bg-gray-200 transition">
+                                {isEditingId ? 'Update Project' : 'Add Project'}
+                            </button>
+                            {isEditingId && (
+                                <button onClick={resetForm} className="bg-gray-700 text-white font-bold px-8 py-3 rounded hover:bg-gray-600 transition">
+                                    Cancel
+                                </button>
+                            )}
+                        </div>
                     </div>
 
-                    {/* Project List */}
-                    <div className="space-y-2">
-                        {editingProjects.map(p => (
-                            <div key={p.id} className="flex items-center justify-between bg-[#141414] p-3 rounded border border-gray-800">
-                                <div className="flex items-center gap-4">
-                                    <img src={p.imageUrl} className="w-16 h-9 object-cover rounded" />
-                                    <div>
-                                        <div className="font-bold">{p.title}</div>
-                                        <div className="text-xs text-gray-500">{p.year} {p.isRestricted && '(Restricted)'}</div>
+                    {/* Project List Grouped by Category */}
+                    <div className="space-y-10">
+                        {CATEGORIES.map((cat) => {
+                            const catProjects = editingProjects.filter(p => p.category === cat);
+                            return (
+                                <div key={cat} className="space-y-4">
+                                    <div className="flex items-center gap-4">
+                                        <h4 className="text-sm font-black text-gray-400 uppercase tracking-widest">{cat}</h4>
+                                        <div className="flex-1 h-px bg-gray-800" />
+                                        <span className="text-[10px] text-gray-600 font-bold">{catProjects.length} Items</span>
+                                    </div>
+                                    
+                                    <div className="space-y-2">
+                                        {catProjects.length === 0 ? (
+                                            <div className="p-4 border border-dashed border-gray-800 rounded text-center text-gray-600 text-sm">
+                                                No projects in this category.
+                                            </div>
+                                        ) : (
+                                            catProjects.map((p, idx) => (
+                                                <div key={p.id} className="flex items-center justify-between bg-[#141414] p-3 rounded border border-gray-800 hover:border-gray-700 transition group/row">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="flex flex-col gap-0.5">
+                                                            <button 
+                                                                onClick={() => moveProject(p.id, 'up')}
+                                                                disabled={idx === 0}
+                                                                className={`p-1 rounded hover:bg-white/10 ${idx === 0 ? 'text-gray-800' : 'text-gray-500 hover:text-white'}`}
+                                                            >
+                                                                <ChevronUp size={14} />
+                                                            </button>
+                                                            <button 
+                                                                onClick={() => moveProject(p.id, 'down')}
+                                                                disabled={idx === catProjects.length - 1}
+                                                                className={`p-1 rounded hover:bg-white/10 ${idx === catProjects.length - 1 ? 'text-gray-800' : 'text-gray-500 hover:text-white'}`}
+                                                            >
+                                                                <ChevronDown size={14} />
+                                                            </button>
+                                                        </div>
+                                                        <img src={p.imageUrl} className="w-16 h-10 object-cover rounded shadow-md" />
+                                                        <div>
+                                                            <div className="font-bold text-sm text-white">{p.title}</div>
+                                                            <div className="text-[10px] text-gray-500 uppercase tracking-tighter">
+                                                                {p.year} • {p.isRestricted ? 'Restricted' : 'Public'}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex gap-1">
+                                                        <button onClick={() => editProject(p)} className="p-2.5 text-gray-400 hover:text-white hover:bg-white/10 rounded transition">
+                                                            <Edit2 size={16}/>
+                                                        </button>
+                                                        <button onClick={() => deleteProject(p.id)} className="p-2.5 text-gray-500 hover:text-red-500 hover:bg-red-500/10 rounded transition">
+                                                            <Trash2 size={16}/>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        )}
                                     </div>
                                 </div>
-                                <div className="flex gap-2">
-                                    <button onClick={() => editProject(p)} className="p-2 text-gray-300 hover:bg-white/10 rounded"><Edit2 size={18}/></button>
-                                    <button onClick={() => deleteProject(p.id)} className="p-2 text-red-500 hover:bg-red-500/10 rounded"><Trash2 size={18}/></button>
-                                </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </div>
             )}
@@ -372,12 +452,12 @@ export const INITIAL_PROJECTS: Project[] = ${JSON.stringify(editingProjects, nul
 
         {/* Footer */}
         <div className="p-6 border-t border-gray-700 bg-[#141414] flex justify-end gap-4">
-             <button onClick={onClose} className="px-6 py-2 rounded border border-gray-600 hover:bg-gray-800 transition">Cancel</button>
-             <button onClick={exportConfig} className="px-6 py-2 rounded border border-blue-600 text-blue-500 hover:bg-blue-900/20 font-bold transition flex items-center gap-2">
-                <Code size={18} /> Export Code
+             <button onClick={onClose} className="px-6 py-2 rounded border border-gray-600 text-gray-300 hover:bg-gray-800 transition text-sm font-bold">Cancel</button>
+             <button onClick={exportConfig} className="px-6 py-2 rounded border border-blue-600/50 text-blue-400 hover:bg-blue-900/20 font-bold transition flex items-center gap-2 text-sm">
+                <Code size={16} /> Export JSON
              </button>
-             <button onClick={saveAll} className="px-6 py-2 rounded bg-red-600 hover:bg-red-700 font-bold transition flex items-center gap-2">
-                <Save size={18} /> Save & Close
+             <button onClick={saveAll} className="px-8 py-2 rounded bg-red-600 hover:bg-red-700 font-bold transition flex items-center gap-2 text-sm">
+                <Save size={16} /> Save Changes
              </button>
         </div>
       </div>
