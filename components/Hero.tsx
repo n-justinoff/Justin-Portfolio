@@ -51,7 +51,7 @@ const Hero: React.FC<HeroProps> = ({ profile, onPlay }) => {
   const { text, color, iconColor, badgeBorder } = getAvailabilityInfo();
 
   return (
-    <div className="relative h-auto aspect-[3/4] md:aspect-auto md:h-[80vh] w-full rounded-2xl md:rounded-[2rem] overflow-hidden shadow-2xl group ring-1 ring-white/10 bg-[#141414]">
+    <div className="relative h-auto aspect-[4/3] md:aspect-auto md:h-[80vh] w-full rounded-2xl md:rounded-[2rem] overflow-hidden shadow-2xl group ring-1 ring-white/10 bg-[#141414]">
       {/* Background Image */}
       <div className="absolute top-0 left-0 w-full h-full">
         <img 
@@ -68,7 +68,7 @@ const Hero: React.FC<HeroProps> = ({ profile, onPlay }) => {
       </div>
 
       {/* Mobile Top Right Badge (Availability) */}
-      <div className={`md:hidden absolute top-4 right-0 bg-[#181818]/80 backdrop-blur-md border-l-2 ${badgeBorder} py-1.5 px-3 flex items-center space-x-2 rounded-l shadow-2xl z-20`}>
+      <div className={`md:hidden absolute top-4 right-0 bg-[#181818]/80 backdrop-blur-md border-l-2 ${badgeBorder} py-1 px-3 flex items-center space-x-2 rounded-l shadow-2xl z-20`}>
              <Calendar className={`${iconColor} w-3 h-3`} />
              <div className="flex flex-col">
                 <span className="uppercase text-[6px] font-bold text-gray-400 tracking-wider leading-tight">Availability</span>
@@ -80,21 +80,21 @@ const Hero: React.FC<HeroProps> = ({ profile, onPlay }) => {
       <div className="absolute bottom-0 left-0 w-full z-10 flex flex-col justify-end pb-4 md:block md:bottom-[12%] md:left-12 md:pb-0">
         
         {/* Inner Wrapper: Centered on Mobile, Left-Aligned on Desktop */}
-        <div className="flex flex-col items-center text-center px-4 w-full md:items-start md:text-left md:max-w-2xl md:px-0 space-y-3 md:space-y-6">
+        <div className="flex flex-col items-center text-center px-4 w-full md:items-start md:text-left md:max-w-2xl md:px-0 space-y-2 md:space-y-6">
 
             {/* N Logo + Name */}
-            <div className="flex items-center space-x-1 mb-1 opacity-90 md:opacity-100 scale-90 md:scale-100">
+            <div className="flex items-center space-x-1 mb-1 opacity-90 md:opacity-100 scale-75 md:scale-100 origin-center md:origin-left">
                  <span className="text-[#E50914] text-3xl md:text-4xl font-black tracking-tighter drop-shadow-lg">N</span>
                  <span className="text-gray-200 font-bold tracking-[0.2em] text-[10px] md:text-xs mt-1 uppercase drop-shadow-md">IRMAL JUSTIN</span>
             </div>
 
             {/* Title */}
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-white leading-[0.9] drop-shadow-2xl uppercase tracking-tighter font-inter max-w-xl mx-auto md:mx-0">
+            <h1 className="text-3xl md:text-6xl lg:text-7xl font-black text-white leading-[0.9] drop-shadow-2xl uppercase tracking-tighter font-inter max-w-xl mx-auto md:mx-0">
                 {profile.title}
             </h1>
 
             {/* Metadata Line */}
-            <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 md:gap-3 text-xs md:text-base font-semibold text-white drop-shadow-lg">
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 md:gap-3 text-[10px] md:text-base font-semibold text-white drop-shadow-lg">
                  <span className="text-green-400 font-bold">98% Match</span>
                  <span className="text-gray-400 text-[10px]">•</span>
                  <span>{new Date().getFullYear()}</span>
@@ -105,27 +105,29 @@ const Hero: React.FC<HeroProps> = ({ profile, onPlay }) => {
             </div>
 
             {/* Buttons - Side by side row on Mobile, Row on Desktop */}
-            <div className="flex flex-row items-center w-full gap-3 pt-2 md:w-auto md:gap-4 md:pt-4">
+            <div className="flex flex-row items-center w-full gap-2 pt-1 md:w-auto md:gap-4 md:pt-4">
               <button 
                 onClick={onPlay}
-                className="flex-1 md:flex-none flex items-center justify-center space-x-2 bg-white text-black px-4 md:px-8 py-2.5 md:py-3 rounded-[4px] font-bold hover:bg-white/90 transition shadow-lg h-10 md:h-auto"
+                className="flex-1 md:flex-none flex items-center justify-center space-x-2 bg-white text-black px-4 md:px-8 py-2 md:py-3 rounded-[4px] font-bold hover:bg-white/90 transition shadow-lg h-9 md:h-auto"
               >
-                <Play className="w-5 h-5 md:w-6 md:h-6 fill-black" />
-                <span className="text-sm md:text-lg">Play</span>
+                <Play className="w-4 h-4 md:w-6 md:h-6 fill-black" />
+                <span className="text-xs md:text-lg">Play</span>
               </button>
               
               <a 
                 href={profile.resumeUrl || "/Nirmal_Justin_Resume.pdf"} 
                 download="Resume.pdf"
-                className="flex-1 md:flex-none flex items-center justify-center space-x-2 bg-[#2f2f2f] md:bg-[rgba(109,109,110,0.7)] text-white px-4 md:px-8 py-2.5 md:py-3 rounded-[4px] font-bold hover:bg-[#404040] md:hover:bg-[rgba(109,109,110,0.5)] transition backdrop-blur-md shadow-lg h-10 md:h-auto"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 md:flex-none flex items-center justify-center space-x-2 bg-[#2f2f2f] md:bg-[rgba(109,109,110,0.7)] text-white px-4 md:px-8 py-2 md:py-3 rounded-[4px] font-bold hover:bg-[#404040] md:hover:bg-[rgba(109,109,110,0.5)] transition backdrop-blur-md shadow-lg h-9 md:h-auto"
               >
-                <Download className="w-5 h-5 md:w-6 md:h-6" />
-                <span className="text-sm md:text-lg whitespace-nowrap">Download Resume</span>
+                <Download className="w-4 h-4 md:w-6 md:h-6" />
+                <span className="text-xs md:text-lg whitespace-nowrap">Download Resume</span>
               </a>
             </div>
 
              {/* Description - Visible on Mobile now */}
-             <p className="block text-gray-300 text-xs md:text-xl font-medium max-w-lg drop-shadow-md opacity-80 md:opacity-100">
+             <p className="block text-gray-300 text-[10px] md:text-xl font-medium max-w-lg drop-shadow-md opacity-80 md:opacity-100 line-clamp-2 md:line-clamp-none">
                 {profile.tagline || "I love watching movies, so why not a portfolio like that?"}
             </p>
         </div>
