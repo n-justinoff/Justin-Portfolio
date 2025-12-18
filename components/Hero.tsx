@@ -50,6 +50,25 @@ const Hero: React.FC<HeroProps> = ({ profile, onPlay }) => {
 
   const { text, color, iconColor, badgeBorder } = getAvailabilityInfo();
 
+  // Robust download handler for mobile and desktop
+  const handleDownloadClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    const url = profile.resumeUrl || "/Nirmal_Justin_Resume.pdf";
+    
+    // If the URL is a base64 data URL (uploaded via Admin Panel)
+    if (url.startsWith('data:')) {
+      e.preventDefault();
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = "Resume.pdf";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+    // For standard URLs, we let the default <a> behavior handle it.
+    // NOTE: If downloading as .html on mobile, it means the server is returning HTML 
+    // for that path (e.g. 404 page). The user must ensure the file exists at the path.
+  };
+
   return (
     <div className="relative h-auto aspect-[3/4] md:aspect-auto md:h-[80vh] w-full rounded-2xl md:rounded-[2rem] overflow-hidden shadow-2xl group ring-1 ring-white/10 bg-[#141414]">
       {/* Background Image */}
@@ -117,8 +136,7 @@ const Hero: React.FC<HeroProps> = ({ profile, onPlay }) => {
               <a 
                 href={profile.resumeUrl || "/Nirmal_Justin_Resume.pdf"} 
                 download="Resume.pdf"
-                target="_blank"
-                rel="noopener noreferrer"
+                onClick={handleDownloadClick}
                 className="flex-1 md:flex-none flex items-center justify-center space-x-2 bg-[#2f2f2f] md:bg-[rgba(109,109,110,0.7)] text-white px-4 md:px-8 py-2.5 md:py-3 rounded-[4px] font-bold hover:bg-[#404040] md:hover:bg-[rgba(109,109,110,0.5)] transition backdrop-blur-md shadow-lg h-10 md:h-auto"
               >
                 <Download className="w-5 h-5 md:w-6 md:h-6" />
