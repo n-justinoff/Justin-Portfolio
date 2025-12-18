@@ -1,5 +1,5 @@
 import React from 'react';
-import { Play, Calendar, Download, ExternalLink } from 'lucide-react';
+import { Play, Calendar, Download } from 'lucide-react';
 import { UserProfile } from '../types';
 
 interface HeroProps {
@@ -68,13 +68,13 @@ const Hero: React.FC<HeroProps> = ({ profile, onPlay }) => {
                        url.includes('dropbox.com') || 
                        (url.startsWith('http') && !url.includes(window.location.hostname));
 
-    // CASE 1: External Links
+    // CASE 1: External Links - Open in new tab
     if (isExternal) {
         window.open(url, '_blank');
         return;
     }
 
-    // CASE 2: Data URL (Base64)
+    // CASE 2: Data URL (Base64) - Process as Blob
     if (url.startsWith('data:')) {
         try {
             const parts = url.split(',');
@@ -94,7 +94,7 @@ const Hero: React.FC<HeroProps> = ({ profile, onPlay }) => {
         return;
     }
 
-    // CASE 3: Local/Same-Domain File Path
+    // CASE 3: Local/Same-Domain File Path - Fetch and Validate
     try {
       const response = await fetch(url);
       const contentType = response.headers.get('content-type');
@@ -126,8 +126,6 @@ const Hero: React.FC<HeroProps> = ({ profile, onPlay }) => {
     document.body.removeChild(link);
     setTimeout(() => window.URL.revokeObjectURL(blobUrl), 200);
   };
-
-  const isExternalUrl = profile.resumeUrl?.includes('drive.google.com') || profile.resumeUrl?.includes('docs.google.com');
 
   return (
     <div className="relative h-auto aspect-[3/4] md:aspect-auto md:h-[80vh] w-full rounded-2xl md:rounded-[2rem] overflow-hidden shadow-2xl group ring-1 ring-white/10 bg-[#141414]">
@@ -198,9 +196,9 @@ const Hero: React.FC<HeroProps> = ({ profile, onPlay }) => {
                 onClick={handleDownloadClick}
                 className="flex-1 md:flex-none flex items-center justify-center space-x-2 bg-[#2f2f2f] md:bg-[rgba(109,109,110,0.7)] text-white px-4 md:px-8 py-2.5 md:py-3 rounded-[4px] font-bold hover:bg-[#404040] md:hover:bg-[rgba(109,109,110,0.5)] transition backdrop-blur-md shadow-lg h-10 md:h-auto"
               >
-                {isExternalUrl ? <ExternalLink className="w-5 h-5 md:w-6 md:h-6" /> : <Download className="w-5 h-5 md:w-6 md:h-6" />}
+                <Download className="w-5 h-5 md:w-6 md:h-6" />
                 <span className="text-sm md:text-lg whitespace-nowrap">
-                    {isExternalUrl ? 'View Resume' : 'Download Resume'}
+                    Download Resume
                 </span>
               </a>
             </div>
