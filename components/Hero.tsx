@@ -50,42 +50,75 @@ const Hero: React.FC<HeroProps> = ({ profile, onPlay }) => {
 
   const { text, color, iconColor, badgeBorder } = getAvailabilityInfo();
 
-  // Robust download handler for mobile and desktop
+  /**
+   * ROBUST DOWNLOAD HANDLER
+   * This function prevents the ".pdf.html" issue on mobile by verifying
+   * that we are actually downloading a PDF and not the site's index.html 
+   * (which happens when a file is missing on Vercel/Netlify due to rewrites).
+   */
   const handleDownloadClick = async (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
     const url = profile.resumeUrl || "/Nirmal_Justin_Resume.pdf";
-    
+    const filename = "Resume.pdf";
+
     try {
-      // If the URL is a base64 data URL (uploaded via Admin Panel)
+      // CASE 1: Data URL (Base64) - Usually from the Admin Panel upload
       if (url.startsWith('data:')) {
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = "Resume.pdf";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        const parts = url.split(',');
+        const mime = parts[0].match(/:(.*?);/)?.[1] || 'application/pdf';
+        const bstr = atob(parts[1]);
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        while (n--) {
+          u8arr[n] = bstr.charCodeAt(n);
+        }
+        // Force the blob to be 'application/pdf'
+        const blob = new Blob([u8arr], { type: 'application/pdf' });
+        triggerDownload(blob, filename);
         return;
       }
 
-      // For standard URLs, we fetch and create a blob to force the filename on mobile
+      // CASE 2: External/Local Path - Requires fetching and validation
       const response = await fetch(url);
+      
+      // Validation: Check if the response is actually a PDF
+      const contentType = response.headers.get('content-type');
+      
+      // If the server returned HTML, it means the PDF file is missing and the SPA 
+      // routing served index.html instead. This is why it downloads as .pdf.html
+      if (!response.ok || (contentType && contentType.includes('text/html'))) {
+        alert("Resume file not found on the server. Please ensure you have uploaded it in the Portfolio Manager.");
+        return;
+      }
+
       const blob = await response.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
-      
-      const link = document.createElement('a');
-      link.href = blobUrl;
-      link.download = "Resume.pdf";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      // Cleanup the blob URL after a short delay
-      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
+      // Ensure the downloaded file is treated as a PDF by the browser
+      const pdfBlob = new Blob([blob], { type: 'application/pdf' });
+      triggerDownload(pdfBlob, filename);
+
     } catch (error) {
-      console.error("Download failed, falling back to direct navigation", error);
-      // Fallback: Just open the URL in a new window/tab
+      console.error("Download failed:", error);
+      // Fallback: Try standard link behavior as last resort
       window.open(url, '_blank');
     }
+  };
+
+  /**
+   * Internal helper to trigger the actual browser download
+   */
+  const triggerDownload = (blob: Blob, name: string) => {
+    const blobUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.setAttribute('download', name);
+    
+    // Required for some mobile browsers to detect the click
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Clean up memory
+    setTimeout(() => window.URL.revokeObjectURL(blobUrl), 200);
   };
 
   return (
