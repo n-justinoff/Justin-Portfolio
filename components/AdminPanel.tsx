@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Project, UserProfile, CATEGORIES } from '../types';
-import { X, Save, Trash2, Plus, Edit2, ChevronDown, ChevronUp, Upload, Code, Link } from 'lucide-react';
+import { X, Save, Trash2, Plus, Edit2, ChevronDown, ChevronUp, Upload, Code, Link, Video } from 'lucide-react';
 
 interface AdminPanelProps {
   isOpen: boolean;
@@ -74,7 +74,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, profile, proje
         return new Promise<string>((resolve) => {
           const reader = new FileReader();
           reader.onloadend = () => resolve(reader.result as string);
-          // Explicitly cast to File to resolve 'unknown' type error from Array.from(FileList)
           reader.readAsDataURL(file as File);
         });
       });
@@ -175,7 +174,7 @@ export const INITIAL_PROJECTS: Project[] = ${JSON.stringify(editingProjects, nul
         title: currentProject.title!,
         description: currentProject.description || "No description",
         imageUrl: currentProject.imageUrl!,
-        heroVideo: currentProject.heroVideo,
+        heroVideo: currentProject.heroVideo || '',
         category: currentProject.category || CATEGORIES[0],
         tags: (currentProject.tags && currentProject.tags.length > 0) ? currentProject.tags : ["New"],
         year: currentProject.year || 2025,
@@ -203,19 +202,16 @@ export const INITIAL_PROJECTS: Project[] = ${JSON.stringify(editingProjects, nul
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 p-4">
       <div className="bg-[#1f1f1f] w-full max-w-6xl h-[90vh] rounded-xl flex flex-col overflow-hidden shadow-2xl border border-gray-800">
         
-        {/* Header */}
         <div className="flex justify-between items-center p-6 border-b border-gray-700 bg-[#141414]">
           <h2 className="text-2xl font-bold text-white">Portfolio Manager</h2>
           <button onClick={onClose} className="p-2 hover:bg-gray-800 rounded-full text-gray-400 hover:text-white transition"><X /></button>
         </div>
 
-        {/* Tabs */}
         <div className="flex border-b border-gray-700 bg-[#141414]">
             <button onClick={() => setActiveTab('profile')} className={`flex-1 py-4 text-center font-semibold transition ${activeTab === 'profile' ? 'text-red-600 border-b-2 border-red-600' : 'text-gray-400'}`}>Edit Profile</button>
             <button onClick={() => setActiveTab('projects')} className={`flex-1 py-4 text-center font-semibold transition ${activeTab === 'projects' ? 'text-red-600 border-b-2 border-red-600' : 'text-gray-400'}`}>Manage Projects</button>
         </div>
 
-        {/* Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-8 no-scrollbar">
             {activeTab === 'profile' ? (
                 <div className="space-y-6 max-w-2xl mx-auto">
@@ -225,6 +221,19 @@ export const INITIAL_PROJECTS: Project[] = ${JSON.stringify(editingProjects, nul
                         
                         <label className="block text-sm font-medium text-gray-400">Hero Title</label>
                         <input value={editingProfile.title} onChange={(e) => handleProfileChange('title', e.target.value)} className="w-full bg-[#2a2a2a] border border-gray-700 rounded p-3 text-white focus:border-red-600 outline-none" />
+
+                        <label className="block text-sm font-medium text-gray-400">Hero Video URL (YouTube or MP4)</label>
+                        <div className="flex gap-2">
+                             <div className="bg-[#141414] p-3 rounded-l border-y border-l border-gray-700 flex items-center">
+                                <Video size={18} className="text-gray-500" />
+                             </div>
+                             <input 
+                                value={editingProfile.heroVideo || ''} 
+                                onChange={(e) => handleProfileChange('heroVideo', e.target.value)} 
+                                placeholder="https://www.youtube.com/watch?v=..."
+                                className="flex-1 bg-[#2a2a2a] border border-gray-700 rounded-r p-3 text-white focus:border-red-600 outline-none" 
+                             />
+                        </div>
 
                         <div className="space-y-4 p-4 bg-[#2a2a2a] rounded border border-gray-700">
                             <h4 className="text-sm font-bold text-white uppercase tracking-wider">Availability Status</h4>
@@ -248,11 +257,11 @@ export const INITIAL_PROJECTS: Project[] = ${JSON.stringify(editingProjects, nul
 
                         <div className="space-y-2">
                              <div className="flex items-center justify-between">
-                                <label className="block text-sm font-medium text-gray-400">Resume / CV (Google Drive Link or Upload)</label>
+                                <label className="block text-sm font-medium text-gray-400">Resume / CV (Link or Upload)</label>
                                 <Link size={14} className="text-gray-500" />
                              </div>
                              <div className="flex gap-2">
-                                <input value={editingProfile.resumeUrl || ''} onChange={(e) => handleProfileChange('resumeUrl', e.target.value)} placeholder="Paste Google Drive Link or enter local path" className="flex-1 bg-[#2a2a2a] border border-gray-700 rounded p-3 text-white focus:border-red-600 outline-none" />
+                                <input value={editingProfile.resumeUrl || ''} onChange={(e) => handleProfileChange('resumeUrl', e.target.value)} placeholder="Paste URL or enter local path" className="flex-1 bg-[#2a2a2a] border border-gray-700 rounded p-3 text-white focus:border-red-600 outline-none" />
                                 <label className="cursor-pointer bg-[#333] hover:bg-[#444] text-white px-4 rounded border border-gray-600 flex items-center justify-center transition" title="Upload PDF">
                                     <Upload size={18} />
                                     <input type="file" accept="application/pdf" className="hidden" onChange={(e) => handleFileUpload(e, (b64) => handleProfileChange('resumeUrl', b64))} />
@@ -310,8 +319,13 @@ export const INITIAL_PROJECTS: Project[] = ${JSON.stringify(editingProjects, nul
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="block text-[10px] uppercase font-bold text-gray-500 mb-1">Short Description</label>
-                                    <textarea placeholder="Visible on grid hover..." value={currentProject.description} onChange={(e) => setCurrentProject({...currentProject, description: e.target.value})} className="w-full bg-[#141414] border border-gray-600 rounded p-2.5 text-white h-24 outline-none" />
+                                    <label className="block text-[10px] uppercase font-bold text-gray-500 mb-1">Project Video URL (YouTube or MP4)</label>
+                                    <div className="flex gap-2">
+                                         <div className="bg-[#141414] p-2.5 rounded-l border border-gray-600 flex items-center">
+                                            <Video size={16} className="text-gray-500" />
+                                         </div>
+                                         <input placeholder="https://www.youtube.com/watch?v=..." value={currentProject.heroVideo || ''} onChange={(e) => setCurrentProject({...currentProject, heroVideo: e.target.value})} className="flex-1 bg-[#141414] border-y border-r border-gray-600 rounded-r p-2.5 text-white outline-none focus:border-red-600" />
+                                    </div>
                                 </div>
                             </div>
                             <div className="space-y-4">
@@ -369,7 +383,7 @@ export const INITIAL_PROJECTS: Project[] = ${JSON.stringify(editingProjects, nul
                                                         <img src={p.imageUrl} className="w-16 h-10 object-cover rounded shadow-md" />
                                                         <div>
                                                             <div className="font-bold text-sm text-white">{p.title}</div>
-                                                            <div className="text-[10px] text-gray-500 uppercase tracking-tighter">{p.year} • {p.isRestricted ? 'Restricted' : 'Public'}</div>
+                                                            <div className="text-[10px] text-gray-500 uppercase tracking-tighter">{p.year} • {p.heroVideo ? 'Video' : 'Img'} • {p.isRestricted ? 'Restricted' : 'Public'}</div>
                                                         </div>
                                                     </div>
                                                     <div className="flex gap-1">
