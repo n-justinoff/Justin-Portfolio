@@ -16,7 +16,7 @@ export const INITIAL_PROFILE: UserProfile = {
     "twitter": "https://twitter.com"
   },
   "availability": {
-    "status": "unavailable",
+    "status": "available",
     "date": "2025-06-27"
   }
 };
